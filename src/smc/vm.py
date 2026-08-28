@@ -15,6 +15,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from http.server import HTTPServer, BaseHTTPRequestHandler
+import json
+import mimetypes
 from pathlib import Path
 import random
 from typing import Any
@@ -112,7 +114,11 @@ class DexterVM:
     # -----------------------------------------------------------------------
 
     def _is_builtin(self, name: str) -> bool:
-        return name.lower() in ("len", "push", "pop", "str", "int", "type", "read_file", "write_file", "serve_http")
+        return name.lower() in (
+            "len", "push", "pop", "str", "int", "type", "read_file", "write_file",
+            "serve_http", "to_json", "from_json", "range", "split", "join", "keys",
+            "values", "contains", "serve_file"
+        )
 
     def _call_builtin(self, name: str, args: list[Any]) -> Any:
         fn = name.lower()
@@ -151,6 +157,8 @@ class DexterVM:
                 return "list"
             if isinstance(val, str):
                 return "string"
+            if isinstance(val, bool):
+                return "bool"
             if isinstance(val, (int, float)):
                 return "number"
             return "object"
@@ -177,6 +185,83 @@ class DexterVM:
             except Exception as e:
                 self.stdout.append(f"[IO_ERROR] Unable to write '{filepath}': {e}")
                 return False
+
+        if fn == "to_json":
+            if not args:
+                return "{}"
+            try:
+                return json.dumps(args[0], indent=2)
+            except Exception as e:
+                self.stdout.append(f"[JSON_ERROR] Failed to serialize JSON: {e}")
+                return "{}"
+
+        if fn == "from_json":
+            if not args:
+                return {}
+            try:
+                return json.loads(str(args[0]))
+            except Exception as e:
+                self.stdout.append(f"[JSON_ERROR] Failed to parse JSON: {e}")
+                return {}
+
+        if fn == "range":
+            if not args:
+                return []
+            try:
+                if len(args) == 1:
+                    return list(range(int(args[0])))
+                if len(args) == 2:
+                    return list(range(int(args[0]), int(args[1])))
+                return list(range(int(args[0]), int(args[1]), int(args[2])))
+            except (ValueError, TypeError):
+                return []
+
+        if fn == "split":
+            if not args:
+                return []
+            sep = str(args[1]) if len(args) > 1 else None
+            return str(args[0]).split(sep)
+
+        if fn == "join":
+            if not args:
+                return ""
+            sep = str(args[1]) if len(args) > 1 else ""
+            items = args[0] if isinstance(args[0], list) else []
+            return sep.join(str(x) for x in items)
+
+        if fn == "keys":
+            if not args or not isinstance(args[0], dict):
+                return []
+            return list(args[0].keys())
+
+        if fn == "values":
+            if not args or not isinstance(args[0], dict):
+                return []
+            return list(args[0].values())
+
+        if fn == "contains":
+            if len(args) < 2:
+                return False
+            coll, target = args[0], args[1]
+            if isinstance(coll, dict):
+                return target in coll
+            if isinstance(coll, (list, str)):
+                return target in coll
+            return False
+
+        if fn == "serve_file":
+            if not args:
+                return {"status": 404, "content_type": "text/html; charset=utf-8", "body": "<h1>404 File Not Specified</h1>"}
+            filepath = Path(str(args[0]))
+            if filepath.is_file():
+                mime, _ = mimetypes.guess_type(str(filepath))
+                mime_type = mime or "application/octet-stream"
+                try:
+                    content = filepath.read_text(encoding="utf-8")
+                    return {"status": 200, "content_type": f"{mime_type}; charset=utf-8", "body": content}
+                except UnicodeDecodeError:
+                    return {"status": 200, "content_type": mime_type, "body": filepath.read_bytes().decode("latin1")}
+            return {"status": 404, "content_type": "text/html; charset=utf-8", "body": f"<h1>404 File '{filepath.name}' Not Found</h1>"}
 
         if fn == "serve_http":
             if not args:
@@ -366,6 +451,12 @@ class DexterVM:
                 return left > right
             if op == ">=":
                 return left >= right
+
+            # Logical
+            if op in ("&&", "and"):
+                return bool(left) and bool(right)
+            if op in ("||", "or"):
+                return bool(left) or bool(right)
 
         return 0
 

@@ -121,18 +121,33 @@ SMC includes a native, high-performance HTTP web server built directly into Dext
 experiment "My_Web_App"
 
 fn handle_request(req) {
-    if (req["path"] == "/") {
+    let p = req["path"]
+
+    # 1. Homepage with Template Strings
+    if (p == "/") {
+        let title = "SMC Web Server"
         return {
             "status": 200,
             "content_type": "text/html",
-            "body": "<h1>Welcome to my SMC Website!</h1>"
+            "body": `<h1>Welcome to ${title}!</h1><p>Full-stack dynamic web in .smc!</p>`
         }
     }
-    # Ephemeral login session: Zero-Redis session state!
-    if (req["path"] == "/login") {
+
+    # 2. Ephemeral login session: Zero-Redis session state!
+    if (p == "/login") {
         acme(ttl=5) user_auth = "Jason_Token"
         return "<h2>Logged in! Session auto-expires via Acme TTL.</h2>"
     }
+
+    # 3. 1-line JSON API
+    if (p == "/api/status") {
+        return {
+            "status": 200,
+            "content_type": "application/json",
+            "body": to_json({ "status": "ONLINE", "active": true })
+        }
+    }
+
     return { "status": 404, "body": "404: Tuxedo Mask could not find page" }
 }
 
@@ -147,12 +162,26 @@ python -m smc.cli run examples/smc_web_server.smc
 
 ---
 
+## ✨ v0.4.0 Developer Ergonomics & Toolkit
+
+* 🪄 **Template Strings:** Interpolate variables and expressions seamlessly using backticks:
+  ```smc
+  let msg = `Hello ${user["name"]}! Level: ${user["lvl"] + 1}`
+  ```
+* ⚡ **Native JSON:** Instant serialization and parsing with `to_json(dict)` and `from_json(str)`.
+* 🎯 **Booleans & Logic:** First-class `true`, `false`, `null`, and logical operators `&&` (`and`), `||` (`or`).
+* 🔢 **Effortless Loops:** `for i in range(1, 10) { ... }`
+* ✂️ **Collection Utilities:** `split(str, sep)`, `join(list, sep)`, `keys(dict)`, `values(dict)`, `contains(coll, item)`.
+* 📁 **Static File Serving:** `serve_file("path/to/asset.css")` with automatic MIME-type detection.
+
+---
+
 ## 🧪 Automated Testing
 Run the comprehensive test suite:
 ```powershell
 python -m pytest D:\smc_lang\tests/
 ```
-**All 26 tests pass in 6.6 seconds (including live HTTP socket tests)!**
+**All 33 tests pass in 6.7 seconds (including live HTTP socket tests)!**
 
 ---
 

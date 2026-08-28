@@ -35,7 +35,11 @@ for (const [op, syns] of Object.entries(OPCODE_SYNONYMS)) {
     }
 }
 
-const BUILTIN_NAMES = new Set(["LEN", "PUSH", "POP", "STR", "INT", "TYPE"]);
+const BUILTIN_NAMES = new Set([
+    "LEN", "PUSH", "POP", "STR", "INT", "TYPE", "READ_FILE", "WRITE_FILE", "SERVE_HTTP",
+    "TO_JSON", "FROM_JSON", "RANGE", "SPLIT", "JOIN", "KEYS", "VALUES", "CONTAINS", "SERVE_FILE",
+    "TRUE", "FALSE", "NULL", "AND", "OR"
+]);
 
 function levenshteinDistance(s1, s2) {
     if (s1.length < s2.length) return levenshteinDistance(s2, s1);
@@ -56,6 +60,7 @@ function levenshteinDistance(s1, s2) {
 
 function resolveWobbleOpcode(rawToken) {
     const clean = rawToken.trim().toUpperCase();
+    if (clean.length <= 1) return null;
     if (BUILTIN_NAMES.has(clean)) return null;
     if (KEYWORD_TO_OPCODE[clean]) return KEYWORD_TO_OPCODE[clean];
 
@@ -141,6 +146,12 @@ class SmcLexer {
             } else if (ch === ">" && this.peek(1) === "=") {
                 this.advance(); this.advance();
                 tokens.push({ type: "GTE", value: ">=", line: startLine, col: startCol });
+            } else if (ch === "&" && this.peek(1) === "&") {
+                this.advance(); this.advance();
+                tokens.push({ type: "AND", value: "&&", line: startLine, col: startCol });
+            } else if (ch === "|" && this.peek(1) === "|") {
+                this.advance(); this.advance();
+                tokens.push({ type: "OR", value: "||", line: startLine, col: startCol });
             } else if (ch === "+" && this.peek(1) === "=") {
                 this.advance(); this.advance();
                 tokens.push({ type: "PLUS_EQ", value: "+=", line: startLine, col: startCol });
@@ -182,6 +193,16 @@ class SmcLexer {
                 if (this.peek() === quote) this.advance();
                 tokens.push({ type: "STRING", value: strVal, line: startLine, col: startCol });
             }
+            // Template Strings: `...`
+            else if (ch === '`') {
+                this.advance();
+                let strVal = "";
+                while (this.pos < this.source.length && this.peek() !== '`') {
+                    strVal += this.advance();
+                }
+                if (this.peek() === '`') this.advance();
+                tokens.push({ type: "TEMPLATE_STRING", value: strVal, line: startLine, col: startCol });
+            }
             // Numbers
             else if (/[0-9]/.test(ch)) {
                 let numStr = "";
@@ -196,11 +217,18 @@ class SmcLexer {
                 while (this.pos < this.source.length && /[a-zA-Z0-9_]/.test(this.peek())) {
                     ident += this.advance();
                 }
-                const op = resolveWobbleOpcode(ident);
-                if (op) {
-                    tokens.push({ type: "KEYWORD", value: ident, opcode: op, line: startLine, col: startCol });
+                const identLower = ident.toLowerCase();
+                if (identLower === "and") {
+                    tokens.push({ type: "AND", value: "and", line: startLine, col: startCol });
+                } else if (identLower === "or") {
+                    tokens.push({ type: "OR", value: "or", line: startLine, col: startCol });
                 } else {
-                    tokens.push({ type: "IDENTIFIER", value: ident, line: startLine, col: startCol });
+                    const op = resolveWobbleOpcode(ident);
+                    if (op) {
+                        tokens.push({ type: "KEYWORD", value: ident, opcode: op, line: startLine, col: startCol });
+                    } else {
+                        tokens.push({ type: "IDENTIFIER", value: ident, line: startLine, col: startCol });
+                    }
                 }
             } else {
                 this.advance();
@@ -238,7 +266,27 @@ class SmcParser {
     }
 
     parseExpression() {
-        return this.parseEquality();
+        return this.parseLogicalOr();
+    }
+
+    parseLogicalOr() {
+        let expr = this.parseLogicalAnd();
+        while (this.peek().type === "OR") {
+            const op = this.advance().value;
+            const right = this.parseLogicalAnd();
+            expr = { type: "BinaryOp", left: expr, op, right };
+        }
+        return expr;
+    }
+
+    parseLogicalAnd() {
+        let expr = this.parseEquality();
+        while (this.peek().type === "AND") {
+            const op = this.advance().value;
+            const right = this.parseEquality();
+            expr = { type: "BinaryOp", left: expr, op, right };
+        }
+        return expr;
     }
 
     parseEquality() {
@@ -298,6 +346,37 @@ class SmcParser {
             return { type: "Literal", value: tok.value };
         }
 
+        // Template Strings: `Hello ${name}!`
+        if (tok.type === "TEMPLATE_STRING") {
+            this.advance();
+            const raw = tok.value;
+            const pattern = /\$\{([^}]+)\}/g;
+            const parts = [];
+            let lastIdx = 0;
+            let match;
+            while ((match = pattern.exec(raw)) !== null) {
+                if (match.index > lastIdx) {
+                    parts.push({ type: "Literal", value: raw.slice(lastIdx, match.index) });
+                }
+                const exprCode = match[1].trim();
+                const subLexer = new SmcLexer(exprCode);
+                const subToks = subLexer.tokenize();
+                const subParser = new SmcParser(subToks);
+                const subAst = subParser.parseExpression();
+                parts.push({ type: "FunctionCall", name: "str", args: [subAst] });
+                lastIdx = pattern.lastIndex;
+            }
+            if (lastIdx < raw.length) {
+                parts.push({ type: "Literal", value: raw.slice(lastIdx) });
+            }
+            if (parts.length === 0) return { type: "Literal", value: "" };
+            let resExpr = parts[0];
+            for (let i = 1; i < parts.length; i++) {
+                resExpr = { type: "BinaryOp", left: resExpr, op: "+", right: parts[i] };
+            }
+            return resExpr;
+        }
+
         // Dictionary: { k: v, ... }
         if (tok.type === "LBRACE") {
             this.advance();
@@ -339,8 +418,13 @@ class SmcParser {
             return expr;
         }
 
-        // Identifiers (Variable, Function Call, or Index)
+        // Identifiers (Variable, Function Call, Booleans, or Index)
         if (tok.type === "IDENTIFIER") {
+            const lower = tok.value.toLowerCase();
+            if (lower === "true") { this.advance(); return { type: "Literal", value: true }; }
+            if (lower === "false") { this.advance(); return { type: "Literal", value: false }; }
+            if (["null", "none"].includes(lower)) { this.advance(); return { type: "Literal", value: null }; }
+
             this.advance();
             const name = tok.value;
             let expr;
@@ -745,7 +829,42 @@ class DexterVM {
                 const val = args[0];
                 if (Array.isArray(val)) return "list";
                 if (val && typeof val === "object") return "dict";
+                if (typeof val === "boolean") return "bool";
+                if (typeof val === "number") return "number";
                 return typeof val;
+            }
+            if (fnLower === "to_json") {
+                try { return JSON.stringify(args[0], null, 2); } catch { return "{}"; }
+            }
+            if (fnLower === "from_json") {
+                try { return JSON.parse(args[0]); } catch { return {}; }
+            }
+            if (fnLower === "range") {
+                if (args.length === 1) return Array.from({length: parseInt(args[0]) || 0}, (_, i) => i);
+                if (args.length >= 2) {
+                    const start = parseInt(args[0]) || 0, end = parseInt(args[1]) || 0, step = parseInt(args[2]) || 1;
+                    const res = [];
+                    for (let i = start; i < end; i += step) res.push(i);
+                    return res;
+                }
+                return [];
+            }
+            if (fnLower === "split") {
+                return String(args[0] ?? "").split(args[1] ?? "");
+            }
+            if (fnLower === "join") {
+                return (Array.isArray(args[0]) ? args[0] : []).join(args[1] ?? "");
+            }
+            if (fnLower === "keys") {
+                return args[0] && typeof args[0] === "object" ? Object.keys(args[0]) : [];
+            }
+            if (fnLower === "values") {
+                return args[0] && typeof args[0] === "object" ? Object.values(args[0]) : [];
+            }
+            if (fnLower === "contains") {
+                if (Array.isArray(args[0]) || typeof args[0] === "string") return args[0].includes(args[1]);
+                if (args[0] && typeof args[0] === "object") return args[1] in args[0];
+                return false;
             }
 
             // User function
@@ -785,6 +904,8 @@ class DexterVM {
             if (op === "<=") return left <= right;
             if (op === ">") return left > right;
             if (op === ">=") return left >= right;
+            if (["&&", "and"].includes(op)) return Boolean(left) && Boolean(right);
+            if (["||", "or"].includes(op)) return Boolean(left) || Boolean(right);
         }
 
         return 0;

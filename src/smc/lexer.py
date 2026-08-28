@@ -99,6 +99,14 @@ class SmcLexer:
                 self._advance()
                 self._advance()
                 tokens.append(CanonicalToken(TokenType.SLASH_EQ, "/=", start_line, start_col))
+            elif ch == "&" and self._peek(1) == "&":
+                self._advance()
+                self._advance()
+                tokens.append(CanonicalToken(TokenType.AND, "&&", start_line, start_col))
+            elif ch == "|" and self._peek(1) == "|":
+                self._advance()
+                self._advance()
+                tokens.append(CanonicalToken(TokenType.OR, "||", start_line, start_col))
 
             # Single-character delimiters and operators
             elif ch == "(":
@@ -177,6 +185,30 @@ class SmcLexer:
                         val_chars.append(self._advance())
                 tokens.append(CanonicalToken(TokenType.STRING, "".join(val_chars), start_line, start_col))
 
+            # Template Strings: `Hello ${name}!`
+            elif ch == "`":
+                self._advance()
+                val_chars = []
+                while self.pos < self.length:
+                    curr = self._peek()
+                    if curr == "\\":
+                        self._advance()
+                        nxt = self._advance()
+                        if nxt == "n":
+                            val_chars.append("\n")
+                        elif nxt == "t":
+                            val_chars.append("\t")
+                        elif nxt == "r":
+                            val_chars.append("\r")
+                        else:
+                            val_chars.append(nxt)
+                    elif curr == "`":
+                        self._advance()
+                        break
+                    else:
+                        val_chars.append(self._advance())
+                tokens.append(CanonicalToken(TokenType.TEMPLATE_STRING, "".join(val_chars), start_line, start_col))
+
             # Numbers
             elif ch.isdigit():
                 num_chars = []
@@ -193,31 +225,37 @@ class SmcLexer:
                     ident_chars.append(self._advance())
                 ident_str = "".join(ident_chars)
 
-                # Attempt wobble opcode resolution
-                resolved_op = resolve_wobble_opcode(ident_str, max_distance=2)
-                if resolved_op:
-                    was_mut = (ident_str.upper() not in KEYWORD_TO_OPCODE)
-                    tokens.append(
-                        CanonicalToken(
-                            token_type=TokenType.KEYWORD,
-                            value=ident_str,
-                            line=start_line,
-                            column=start_col,
-                            resolved_opcode=resolved_op,
-                            was_mutated=was_mut,
-                            original_text=ident_str,
-                        )
-                    )
+                ident_lower = ident_str.lower()
+                if ident_lower == "and":
+                    tokens.append(CanonicalToken(TokenType.AND, "and", start_line, start_col))
+                elif ident_lower == "or":
+                    tokens.append(CanonicalToken(TokenType.OR, "or", start_line, start_col))
                 else:
-                    tokens.append(
-                        CanonicalToken(
-                            token_type=TokenType.IDENTIFIER,
-                            value=ident_str,
-                            line=start_line,
-                            column=start_col,
-                            original_text=ident_str,
+                    # Attempt wobble opcode resolution
+                    resolved_op = resolve_wobble_opcode(ident_str, max_distance=2)
+                    if resolved_op:
+                        was_mut = (ident_str.upper() not in KEYWORD_TO_OPCODE)
+                        tokens.append(
+                            CanonicalToken(
+                                token_type=TokenType.KEYWORD,
+                                value=ident_str,
+                                line=start_line,
+                                column=start_col,
+                                resolved_opcode=resolved_op,
+                                was_mutated=was_mut,
+                                original_text=ident_str,
+                            )
                         )
-                    )
+                    else:
+                        tokens.append(
+                            CanonicalToken(
+                                token_type=TokenType.IDENTIFIER,
+                                value=ident_str,
+                                line=start_line,
+                                column=start_col,
+                                original_text=ident_str,
+                            )
+                        )
             else:
                 # Unknown character, advance gracefully (biological neutral mutation)
                 self._advance()

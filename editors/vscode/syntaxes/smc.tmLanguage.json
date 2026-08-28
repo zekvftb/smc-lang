@@ -30,6 +30,25 @@
       ]
     },
     {
+      "name": "string.quoted.template.smc",
+      "begin": "`",
+      "end": "`",
+      "patterns": [
+        {
+          "name": "constant.character.escape.smc",
+          "match": "\\\\."
+        },
+        {
+          "name": "variable.other.interpolated.smc",
+          "match": "\\$\\{[^}]+\\}"
+        }
+      ]
+    },
+    {
+      "name": "constant.language.boolean.smc",
+      "match": "\\b(true|false|null)\\b"
+    },
+    {
       "name": "constant.numeric.smc",
       "match": "\\b[0-9]+(\\.[0-9]+)?\\b"
     },
@@ -47,7 +66,7 @@
     },
     {
       "name": "support.function.builtin.smc",
-      "match": "\\b(len|push|pop|str|int|type|read_file|write_file|print|kamehameha|hadouken)\\b"
+      "match": "\\b(len|push|pop|str|int|type|read_file|write_file|serve_http|serve_file|to_json|from_json|range|split|join|keys|values|contains|print|kamehameha|hadouken)\\b"
     },
     {
       "name": "constant.language.toon.smc",
@@ -55,7 +74,7 @@
     },
     {
       "name": "keyword.operator.assignment.compound.smc",
-      "match": "(\\+=|-=|\\*=|/=|==|!=|<=|>=|<|>|\\+|-|\\*|/|%|=|!)"
+      "match": "(&&|\\|\\||\\+=|-=|\\*=|/=|==|!=|<=|>=|<|>|\\+|-|\\*|/|%|=|!)|\\b(and|or)\\b"
     }
   ]
 }

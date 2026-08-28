@@ -228,7 +228,23 @@ class SmcParser:
     # -----------------------------------------------------------------------
 
     def parse_expression(self) -> AstNode:
-        return self._parse_equality()
+        return self._parse_logical_or()
+
+    def _parse_logical_or(self) -> AstNode:
+        expr = self._parse_logical_and()
+        while self._peek().token_type == TokenType.OR:
+            op_tok = self._advance()
+            right = self._parse_logical_and()
+            expr = BinaryOpNode(left=expr, op=str(op_tok.value), right=right)
+        return expr
+
+    def _parse_logical_and(self) -> AstNode:
+        expr = self._parse_equality()
+        while self._peek().token_type == TokenType.AND:
+            op_tok = self._advance()
+            right = self._parse_equality()
+            expr = BinaryOpNode(left=expr, op=str(op_tok.value), right=right)
+        return expr
 
     def _parse_equality(self) -> AstNode:
         expr = self._parse_comparison()
@@ -277,6 +293,31 @@ class SmcParser:
             self._advance()
             return LiteralNode(value=tok.value)
 
+        # Template Strings: `Hello ${name}!`
+        if tok.token_type == TokenType.TEMPLATE_STRING:
+            raw = str(self._advance().value)
+            import re
+            pattern = re.compile(r'\$\{([^}]+)\}')
+            parts: list[AstNode] = []
+            last_end = 0
+            for m in pattern.finditer(raw):
+                if m.start() > last_end:
+                    parts.append(LiteralNode(value=raw[last_end:m.start()]))
+                expr_text = m.group(1).strip()
+                from smc.lexer import SmcLexer
+                sub_toks = SmcLexer(expr_text).tokenize()
+                sub_expr = SmcParser(sub_toks).parse_expression()
+                parts.append(FunctionCallNode(name="str", args=[sub_expr]))
+                last_end = m.end()
+            if last_end < len(raw):
+                parts.append(LiteralNode(value=raw[last_end:]))
+            if not parts:
+                return LiteralNode(value="")
+            res_expr = parts[0]
+            for p in parts[1:]:
+                res_expr = BinaryOpNode(left=res_expr, op="+", right=p)
+            return res_expr
+
         # First-class Dictionaries: {key: value, ...}
         if tok.token_type == TokenType.LBRACE:
             self._advance()
@@ -321,8 +362,19 @@ class SmcParser:
                 expr = IndexAccessNode(target=expr, index_expr=idx_expr)
             return expr
 
-        # Identifiers (variable name OR function call OR indexed access)
+        # Identifiers (variable name OR function call OR indexed access OR booleans)
         if tok.token_type == TokenType.IDENTIFIER:
+            val_lower = str(tok.value).lower()
+            if val_lower == "true":
+                self._advance()
+                return LiteralNode(value=True)
+            if val_lower == "false":
+                self._advance()
+                return LiteralNode(value=False)
+            if val_lower in ("null", "none"):
+                self._advance()
+                return LiteralNode(value=None)
+
             self._advance()
             name = str(tok.value)
 

@@ -195,16 +195,22 @@ power *= 2      # 150
 * **`pop(list)`**: Removes and returns the last element of a list.
 * **`str(val)`**: Converts number or boolean to string.
 * **`int(val)`**: Parses string to integer.
-* **`type(val)`**: Returns `"dict"`, `"list"`, `"string"`, or `"number"`.
-* **`read_file(path)`**: Reads text from a local file.
-* **`write_file(path, content)`**: Writes text to a local file.
+* **`to_json(data)`**: Serializes dictionaries, lists, and primitives into JSON strings.
+* **`from_json(json_str)`**: Parses JSON strings directly into native SMC data structures.
+* **`range(start, end[, step])`**: Generates number sequences for `for-in` loops.
+* **`split(text, sep)`**: Splits string into a list by delimiter.
+* **`join(list, sep)`**: Combines list of items into a single string.
+* **`keys(dict)`**: Returns all keys from a dictionary.
+* **`values(dict)`**: Returns all values from a dictionary.
+* **`contains(collection, target)`**: Checks membership in lists, dictionaries, and strings.
+* **`serve_file(path)`**: Serves static files with automatic MIME-type detection in web servers.
 * **`serve_http(port, handler_fn)`**: Launches a native high-performance HTTP web server listening on `http://localhost:port`, routing incoming requests directly to your SMC handler function!
 
 ```smc
-let inventory = ["Potion"]
-push(inventory, "Shield")
-print "Inventory count: " + str(len(inventory))
-let used = pop(inventory)
+let user = { "name": "Dexter", "level": 10 }
+let json_str = to_json(user)
+let back = from_json(json_str)
+print `User: ${back["name"]} (Lvl ${back["level"]})`
 ```
 
 ---

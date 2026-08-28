@@ -30,7 +30,7 @@ class TokenType(str, Enum):
     EQUALS = "EQUALS"        # =
     COMMA = "COMMA"          # ,
 
-    # Operators (Arithmetic & Comparisons)
+    # Operators (Arithmetic & Comparisons & Logic)
     PLUS = "PLUS"            # +
     MINUS = "MINUS"          # -
     STAR = "STAR"            # *
@@ -43,6 +43,11 @@ class TokenType(str, Enum):
     GT = "GT"                # >
     GTE = "GTE"              # >=
     NOT = "NOT"              # !
+    AND = "AND"              # && / and
+    OR = "OR"                # || / or
+
+    # Template Strings
+    TEMPLATE_STRING = "TEMPLATE_STRING"
 
     # Compound Assignment Operators
     PLUS_EQ = "PLUS_EQ"      # +=
@@ -156,7 +161,11 @@ def levenshtein_distance(s1: str, s2: str) -> int:
     return prev_row[-1]
 
 
-BUILTIN_IDENTIFIERS = {"LEN", "POP", "INT", "STR", "PUSH", "TYPE", "READ_FILE", "WRITE_FILE", "SERVE_HTTP"}
+BUILTIN_IDENTIFIERS = {
+    "LEN", "POP", "INT", "STR", "PUSH", "TYPE", "READ_FILE", "WRITE_FILE", "SERVE_HTTP",
+    "TO_JSON", "FROM_JSON", "RANGE", "SPLIT", "JOIN", "KEYS", "VALUES", "CONTAINS", "SERVE_FILE",
+    "TRUE", "FALSE", "NULL", "AND", "OR"
+}
 
 
 def resolve_wobble_opcode(raw_token: str, max_distance: int = 2) -> Opcode | None:
@@ -170,6 +179,10 @@ def resolve_wobble_opcode(raw_token: str, max_distance: int = 2) -> Opcode | Non
     # 1. Exact match in degenerate dictionary
     if token_clean in KEYWORD_TO_OPCODE:
         return KEYWORD_TO_OPCODE[token_clean]
+
+    # For 1-character tokens, never allow typos (single letters like i, x, y are variables)
+    if len(token_clean) <= 1:
+        return None
 
     # For short tokens (<= 4 chars), allow at most 1 typo to prevent false positives
     allowed_dist = 1 if len(token_clean) <= 4 else max_distance
