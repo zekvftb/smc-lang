@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
+from pathlib import Path
 from typing import Any
 
 from smc.parser import (
@@ -21,6 +22,7 @@ from smc.parser import (
     FunctionDefNode,
     HaltNode,
     IfNode,
+    ImportNode,
     IndexAccessNode,
     IndexAssignNode,
     ListNode,
@@ -289,6 +291,24 @@ class BytecodeCompiler:
         elif isinstance(node, ReturnNode):
             self._compile_expression(node.expr, instructions)
             instructions.append(Instruction(BytecodeOp.RETURN))
+
+        elif isinstance(node, ImportNode):
+            # Recursively resolve and compile imported SMC module
+            import_path = Path(node.path)
+            if not import_path.exists():
+                candidate = Path.cwd() / node.path
+                if not candidate.exists():
+                    candidate = Path(__file__).parent.parent.parent / node.path
+                if candidate.exists():
+                    import_path = candidate
+
+            if import_path.exists():
+                code = import_path.read_text(encoding="utf-8")
+                from smc.lexer import SmcLexer
+                from smc.parser import SmcParser
+                sub_ast = SmcParser(SmcLexer(code).tokenize()).parse()
+                for stmt in sub_ast.statements:
+                    self._compile_statement(stmt, instructions)
 
         elif isinstance(node, HaltNode):
             instructions.append(Instruction(BytecodeOp.HALT))
