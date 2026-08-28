@@ -2,7 +2,8 @@
 
 Tokenizes source text and applies biological codon degeneracy to resolve
 synonyms and mutated keywords without throwing fatal syntax errors.
-Supports arithmetic operators, logical comparisons, and control flow tokens.
+Supports arithmetic operators, logical comparisons, compound assignments,
+dictionaries, and control flow tokens.
 """
 
 from __future__ import annotations
@@ -65,7 +66,7 @@ class SmcLexer:
             start_line = self.line
             start_col = self.col
 
-            # Multi-character comparison operators
+            # Multi-character compound assignment & comparison operators
             if ch == "=" and self._peek(1) == "=":
                 self._advance()
                 self._advance()
@@ -82,6 +83,22 @@ class SmcLexer:
                 self._advance()
                 self._advance()
                 tokens.append(CanonicalToken(TokenType.GTE, ">=", start_line, start_col))
+            elif ch == "+" and self._peek(1) == "=":
+                self._advance()
+                self._advance()
+                tokens.append(CanonicalToken(TokenType.PLUS_EQ, "+=", start_line, start_col))
+            elif ch == "-" and self._peek(1) == "=":
+                self._advance()
+                self._advance()
+                tokens.append(CanonicalToken(TokenType.MINUS_EQ, "-=", start_line, start_col))
+            elif ch == "*" and self._peek(1) == "=":
+                self._advance()
+                self._advance()
+                tokens.append(CanonicalToken(TokenType.STAR_EQ, "*=", start_line, start_col))
+            elif ch == "/" and self._peek(1) == "=":
+                self._advance()
+                self._advance()
+                tokens.append(CanonicalToken(TokenType.SLASH_EQ, "/=", start_line, start_col))
 
             # Single-character delimiters and operators
             elif ch == "(":
@@ -102,6 +119,9 @@ class SmcLexer:
             elif ch == "}":
                 self._advance()
                 tokens.append(CanonicalToken(TokenType.RBRACE, "}", start_line, start_col))
+            elif ch == ":":
+                self._advance()
+                tokens.append(CanonicalToken(TokenType.COLON, ":", start_line, start_col))
             elif ch == "=":
                 self._advance()
                 tokens.append(CanonicalToken(TokenType.EQUALS, "=", start_line, start_col))

@@ -150,13 +150,60 @@ print result
 ```
 
 ### First-Class Lists / Arrays
-Store ordered collections and access items by 0-based index:
+Store ordered collections and access items by 0-based index (including negative indices):
 ```smc
 let team = ["Blossom", "Bubbles", "Buttercup"]
 let scores = [100, 250, (50 * 8)]
 
 print team[0]       # "Blossom"
-print scores[2]     # 400
+print team[-1]      # "Buttercup" (negative index)
+```
+
+### First-Class Dictionaries / Key-Value Objects
+Model entities and structured state:
+```smc
+let hero = {
+    "name": "Sailor_Mars",
+    "hp": 100,
+    "element": "FIRE"
+}
+
+print hero["name"]      # "Sailor_Mars"
+hero["hp"] -= 20        # Compound indexed assignment
+hero["status"] = "Ready"
+```
+
+### For-In Loops
+Iterate directly over collections without manual index counters:
+```smc
+for member in team {
+    print "Roster: " + member
+}
+```
+
+### Compound Assignment
+Support `+=`, `-=`, `*=`, `/=`:
+```smc
+let power = 50
+power += 25     # 75
+power *= 2      # 150
+```
+
+### Standard Built-in Library Functions
+* **`len(x)`**: Returns length of list, dictionary, or string.
+* **`push(list, item)`**: Appends an item to the end of a list.
+* **`pop(list)`**: Removes and returns the last element of a list.
+* **`str(val)`**: Converts number or boolean to string.
+* **`int(val)`**: Parses string to integer.
+* **`type(val)`**: Returns `"dict"`, `"list"`, `"string"`, or `"number"`.
+* **`read_file(path)`**: Reads text from a local file.
+* **`write_file(path, content)`**: Writes text to a local file.
+
+```smc
+let inventory = ["Potion"]
+push(inventory, "Shield")
+print "Inventory count: " + str(len(inventory))
+let used = pop(inventory)
 ```
 
 ---
@@ -283,5 +330,18 @@ This will print every token in your file and highlight any typos that were repai
 ```
 Line 02:01 | KEYWORD | 'KAMAHAMEHA' -> Opcode.PRINT [MUTATION REPAIRED!]
 ```
+
+---
+
+## 8. Visual Studio Code Syntax Highlighting
+
+To give your `.smc` files syntax highlighting in VS Code:
+
+```powershell
+# Copy the included extension to your local VS Code extensions folder:
+Copy-Item -Recurse D:\smc_lang\editors\vscode "$HOME\.vscode\extensions\smc-lang"
+```
+
+Reload VS Code (`Ctrl+Shift+P` -> "Developer: Reload Window"), and all keywords, Acme boxes, and Sailor Moon transformations will glow in full color!
 
 Have fun experimenting in the laboratory!

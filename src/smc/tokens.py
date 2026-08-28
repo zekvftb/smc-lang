@@ -26,6 +26,7 @@ class TokenType(str, Enum):
     RPAREN = "RPAREN"        # )
     LBRACKET = "LBRACKET"    # [
     RBRACKET = "RBRACKET"    # ]
+    COLON = "COLON"          # :
     EQUALS = "EQUALS"        # =
     COMMA = "COMMA"          # ,
 
@@ -43,6 +44,12 @@ class TokenType(str, Enum):
     GTE = "GTE"              # >=
     NOT = "NOT"              # !
 
+    # Compound Assignment Operators
+    PLUS_EQ = "PLUS_EQ"      # +=
+    MINUS_EQ = "MINUS_EQ"    # -=
+    STAR_EQ = "STAR_EQ"      # *=
+    SLASH_EQ = "SLASH_EQ"    # /=
+
     EOF = "EOF"
 
 
@@ -53,6 +60,8 @@ class Opcode(str, Enum):
     IF = "IF"
     ELSE = "ELSE"
     WHILE = "WHILE"
+    FOR = "FOR"
+    IN = "IN"
     FN = "FN"
     RETURN = "RETURN"
     SUMMON = "SUMMON"
@@ -84,6 +93,12 @@ OPCODE_SYNONYMS: dict[Opcode, list[str]] = {
     ],
     Opcode.WHILE: [
         "WHILE", "LOOP", "CYCLE", "ROAD_RUNNER_LOOP"
+    ],
+    Opcode.FOR: [
+        "FOR", "EACH", "FOR_EACH", "ITERATE"
+    ],
+    Opcode.IN: [
+        "IN", "INSIDE", "FROM"
     ],
     Opcode.FN: [
         "FN", "FUNCTION", "DEF", "SUBROUTINE", "RECIPE", "TECHNIQUE"
@@ -141,9 +156,16 @@ def levenshtein_distance(s1: str, s2: str) -> int:
     return prev_row[-1]
 
 
+BUILTIN_IDENTIFIERS = {"LEN", "POP", "INT", "STR", "PUSH", "TYPE", "READ_FILE", "WRITE_FILE"}
+
+
 def resolve_wobble_opcode(raw_token: str, max_distance: int = 2) -> Opcode | None:
     """Resolve a raw token into a canonical Opcode, allowing synonyms and single/double typos."""
     token_clean = raw_token.strip().upper()
+
+    # Built-in function identifiers should never be treated as opcode typos
+    if token_clean in BUILTIN_IDENTIFIERS:
+        return None
 
     # 1. Exact match in degenerate dictionary
     if token_clean in KEYWORD_TO_OPCODE:

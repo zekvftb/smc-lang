@@ -1,0 +1,67 @@
+# =============================================================
+# SMC SAMPLE: Power RPG Battle Simulator
+# =============================================================
+# Showcases Stage 4 Features:
+# - First-class Dictionaries / Key-Value objects
+# - For-in loops over arrays
+# - Compound assignment (+=, -=, *=)
+# - Standard built-ins: len(), push(), pop(), str()
+# - Acme TTL temporary battle buffs
+
+experiment "Townsville_RPG_Showdown"
+
+# 1. Define character dictionary
+let player = {
+    "name": "Blossom",
+    "hp": 120,
+    "attack": 25,
+    "inventory": ["Ice_Breath_Scroll", "Chemical_X_Vial"]
+}
+
+let villain = {
+    "name": "Mojo_Jojo",
+    "hp": 150,
+    "attack": 20
+}
+
+print "--- Battle Commencing ---"
+print "Hero: " + player["name"]
+print "Villain: " + villain["name"]
+
+# 2. Add an item to inventory using built-in push()
+push(player["inventory"], "Super_Shield")
+print "Inventory count: " + str(len(player["inventory"]))
+
+# 3. For-in loop through inventory items
+print "Equipment ready:"
+for item in player["inventory"] {
+    print "  - " + item
+}
+
+# 4. Turn combat simulation
+fn execute_attack(attacker_name, base_dmg) {
+    # Acme ephemeral critical-strike buff (auto-expires in 2 cycles)
+    acme(ttl=2) crit_boost = 10
+    let total_dmg = base_dmg + crit_boost
+    print attacker_name + " strikes with power: " + str(total_dmg)
+    return total_dmg
+}
+
+# Turn 1: Player strikes
+let dmg = execute_attack(player["name"], player["attack"])
+villain["hp"] -= dmg
+print "Mojo Jojo HP remaining: " + str(villain["hp"])
+
+# Turn 2: Compound assignment & retaliation
+let mojo_dmg = villain["attack"]
+player["hp"] -= mojo_dmg
+print "Blossom HP remaining: " + str(player["hp"])
+
+# Turn 3: Consume inventory item with pop()
+let used_item = pop(player["inventory"])
+print "Blossom consumes: " + used_item
+player["hp"] += 50
+print "Blossom HP recovered to: " + str(player["hp"])
+
+print "Battle phase completed successfully!"
+halt

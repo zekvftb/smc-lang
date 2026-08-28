@@ -100,7 +100,19 @@ Run the comprehensive test suite:
 ```powershell
 python -m pytest D:\smc_lang\tests/
 ```
-**All 15 tests pass in 0.12 seconds!**
+**All 24 tests pass in 0.13 seconds!**
+
+---
+
+## 🎨 VS Code Syntax Highlighting Extension
+
+SMC includes an official VS Code extension for full syntax coloring!
+
+To install it:
+```powershell
+Copy-Item -Recurse D:\smc_lang\editors\vscode "$HOME\.vscode\extensions\smc-lang"
+```
+Reload VS Code (`Ctrl+Shift+P` -> "Developer: Reload Window") and `.smc` files will light up with syntax highlighting.
 
 ---
 

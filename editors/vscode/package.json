@@ -1,0 +1,40 @@
+{
+  "name": "smc-lang",
+  "displayName": "SMC (Saturday Morning Cartoons) Language",
+  "description": "Syntax highlighting and language support for the biologically inspired SMC programming language",
+  "version": "0.2.0",
+  "publisher": "JasonRezek",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zekvftb/smc-lang"
+  },
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "smc",
+        "aliases": [
+          "SMC",
+          "smc",
+          "SaturdayMorningCartoons"
+        ],
+        "extensions": [
+          ".smc"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "smc",
+        "scopeName": "source.smc",
+        "path": "./syntaxes/smc.tmLanguage.json"
+      }
+    ]
+  }
+}

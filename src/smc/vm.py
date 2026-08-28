@@ -1,9 +1,10 @@
 """Dexter Virtual Machine (DexterVM) for the SMC Language.
 
 Features:
-- Arithmetic expressions, logical comparisons, and first-class lists.
-- User-defined functions with parameters, local scoping, and return values.
-- Control flow: if/else conditionals and while loops.
+- Arithmetic expressions, logical comparisons, lists, and first-class dictionaries.
+- Standard built-in library: len(), push(), pop(), read_file(), write_file(), str(), int(), type().
+- For-in iteration loops and compound assignments (+=, -=, *=, /=).
+- Safe negative indexing, division-by-zero guards, and recursion limits.
 - Acme-Anvil Time-To-Live (TTL) ephemeral memory.
 - Captain Planet content-addressable function dispatch.
 - Sailor Moon transformations (MOON_PRISM_POWER) and watchdog fallbacks (TUXEDO_MASK).
@@ -13,6 +14,7 @@ Features:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 import random
 from typing import Any
 
@@ -20,13 +22,17 @@ from smc.parser import (
     AstNode,
     BinaryOpNode,
     CallRingNode,
+    CompoundAssignNode,
+    DictNode,
     ExpressionStatementNode,
     FallbackNode,
+    ForInNode,
     FunctionCallNode,
     FunctionDefNode,
     HaltNode,
     IfNode,
     IndexAccessNode,
+    IndexAssignNode,
     ListNode,
     LiteralNode,
     MutateBlockNode,
@@ -101,6 +107,79 @@ class DexterVM:
             self.variables[name] = value
 
     # -----------------------------------------------------------------------
+    # Built-in Standard Functions
+    # -----------------------------------------------------------------------
+
+    def _is_builtin(self, name: str) -> bool:
+        return name.lower() in ("len", "push", "pop", "str", "int", "type", "read_file", "write_file")
+
+    def _call_builtin(self, name: str, args: list[Any]) -> Any:
+        fn = name.lower()
+        if fn == "len":
+            target = args[0] if args else []
+            return len(target) if hasattr(target, "__len__") else 0
+
+        if fn == "push":
+            if args and isinstance(args[0], list):
+                val = args[1] if len(args) > 1 else None
+                args[0].append(val)
+                return args[0]
+            return []
+
+        if fn == "pop":
+            if args and isinstance(args[0], list) and len(args[0]) > 0:
+                return args[0].pop()
+            return 0
+
+        if fn == "str":
+            return str(args[0]) if args else ""
+
+        if fn == "int":
+            try:
+                return int(args[0]) if args else 0
+            except (ValueError, TypeError):
+                return 0
+
+        if fn == "type":
+            if not args:
+                return "null"
+            val = args[0]
+            if isinstance(val, dict):
+                return "dict"
+            if isinstance(val, list):
+                return "list"
+            if isinstance(val, str):
+                return "string"
+            if isinstance(val, (int, float)):
+                return "number"
+            return "object"
+
+        if fn == "read_file":
+            if not args:
+                return ""
+            filepath = Path(str(args[0]))
+            try:
+                return filepath.read_text(encoding="utf-8")
+            except Exception as e:
+                self.stdout.append(f"[IO_ERROR] Unable to read '{filepath}': {e}")
+                return ""
+
+        if fn == "write_file":
+            if len(args) < 2:
+                return False
+            filepath = Path(str(args[0]))
+            content = str(args[1])
+            try:
+                filepath.parent.mkdir(parents=True, exist_ok=True)
+                filepath.write_text(content, encoding="utf-8")
+                return True
+            except Exception as e:
+                self.stdout.append(f"[IO_ERROR] Unable to write '{filepath}': {e}")
+                return False
+
+        return 0
+
+    # -----------------------------------------------------------------------
     # Expression Evaluation
     # -----------------------------------------------------------------------
 
@@ -115,16 +194,37 @@ class DexterVM:
         if isinstance(node, ListNode):
             return [self.evaluate_expression(elem) for elem in node.elements]
 
+        if isinstance(node, DictNode):
+            res_dict = {}
+            for k_expr, v_expr in node.pairs:
+                k = self.evaluate_expression(k_expr)
+                v = self.evaluate_expression(v_expr)
+                res_dict[k] = v
+            return res_dict
+
         if isinstance(node, IndexAccessNode):
             target = self.evaluate_expression(node.target)
             idx = self.evaluate_expression(node.index_expr)
-            try:
-                return target[int(idx)]
-            except (IndexError, TypeError, KeyError):
-                return 0
+
+            # Dictionary key lookup
+            if isinstance(target, dict):
+                return target.get(idx, 0)
+
+            # List or String indexed access (with safe negative indices)
+            if isinstance(target, (list, str)):
+                try:
+                    int_idx = int(idx)
+                    return target[int_idx]
+                except (IndexError, TypeError, ValueError):
+                    return 0
+
+            return 0
 
         if isinstance(node, FunctionCallNode):
-            return self._call_function(node.name, [self.evaluate_expression(arg) for arg in node.args])
+            evaluated_args = [self.evaluate_expression(arg) for arg in node.args]
+            if self._is_builtin(node.name):
+                return self._call_builtin(node.name, evaluated_args)
+            return self._call_function(node.name, evaluated_args)
 
         if isinstance(node, UnaryOpNode):
             val = self.evaluate_expression(node.operand)
@@ -151,7 +251,10 @@ class DexterVM:
             if op == "*":
                 return left * right
             if op == "/":
-                return left / right if right != 0 else 0
+                if right == 0:
+                    self.stdout.append("[WARNING] Division by zero detected; clamped to 0.")
+                    return 0
+                return left / right
             if op == "%":
                 return left % right if right != 0 else 0
 
@@ -175,6 +278,10 @@ class DexterVM:
         """Execute a user-defined function in an isolated local stack frame."""
         if name not in self.functions:
             self.stdout.append(f"[ERROR] Undefined function '{name}' called.")
+            return 0
+
+        if len(self.call_stack) >= 100:
+            self.stdout.append("[STACK_OVERFLOW] Maximum recursion depth (100 frames) exceeded!")
             return 0
 
         fn_def = self.functions[name]
@@ -213,12 +320,68 @@ class DexterVM:
             val = self.evaluate_expression(node.expr)
             self.set_var(node.name, val)
 
-        # 2. TTL_BOX: acme(ttl=N) x = <expr>
+        # 2. COMPOUND ASSIGN: x += 1, x -= 5, x *= 2, x /= 2
+        elif isinstance(node, CompoundAssignNode):
+            curr = self.get_var(node.name)
+            operand = self.evaluate_expression(node.expr)
+            if node.op == "+=":
+                if isinstance(curr, str) or isinstance(operand, str):
+                    self.set_var(node.name, str(curr) + str(operand))
+                elif isinstance(curr, list) and isinstance(operand, list):
+                    self.set_var(node.name, curr + operand)
+                else:
+                    self.set_var(node.name, curr + operand)
+            elif node.op == "-=":
+                self.set_var(node.name, curr - operand)
+            elif node.op == "*=":
+                self.set_var(node.name, curr * operand)
+            elif node.op == "/=":
+                if operand == 0:
+                    self.stdout.append("[WARNING] Division by zero detected; clamped to 0.")
+                    self.set_var(node.name, 0)
+                else:
+                    self.set_var(node.name, curr / operand)
+
+        # 2b. INDEXED ASSIGNMENT: x[key] = val, x[key] -= val
+        elif isinstance(node, IndexAssignNode):
+            target = self.get_var(node.target_name)
+            idx = self.evaluate_expression(node.index_expr)
+            new_val = self.evaluate_expression(node.value_expr)
+            if isinstance(target, dict):
+                curr = target.get(idx, 0)
+                if node.op == "=":
+                    target[idx] = new_val
+                elif node.op == "+=":
+                    target[idx] = curr + new_val
+                elif node.op == "-=":
+                    target[idx] = curr - new_val
+                elif node.op == "*=":
+                    target[idx] = curr * new_val
+                elif node.op == "/=":
+                    target[idx] = curr / new_val if new_val != 0 else 0
+            elif isinstance(target, list):
+                try:
+                    int_idx = int(idx)
+                    curr = target[int_idx]
+                    if node.op == "=":
+                        target[int_idx] = new_val
+                    elif node.op == "+=":
+                        target[int_idx] = curr + new_val
+                    elif node.op == "-=":
+                        target[int_idx] = curr - new_val
+                    elif node.op == "*=":
+                        target[int_idx] = curr * new_val
+                    elif node.op == "/=":
+                        target[int_idx] = curr / new_val if new_val != 0 else 0
+                except (IndexError, ValueError):
+                    pass
+
+        # 3. TTL_BOX: acme(ttl=N) x = <expr>
         elif isinstance(node, TtlBoxNode):
             val = self.evaluate_expression(node.expr)
             self.ttl_memory[node.name] = TtlItem(value=val, ttl=node.ttl)
 
-        # 3. IF / ELSE
+        # 4. IF / ELSE
         elif isinstance(node, IfNode):
             cond_val = self.evaluate_expression(node.condition)
             if bool(cond_val):
@@ -232,7 +395,7 @@ class DexterVM:
                         break
                     self.execute_node(stmt)
 
-        # 4. WHILE loop (with max step safety limit)
+        # 5. WHILE loop (with max step safety limit)
         elif isinstance(node, WhileNode):
             loop_limit = 5000
             count = 0
@@ -243,24 +406,42 @@ class DexterVM:
                         break
                     self.execute_node(stmt)
 
-        # 5. FUNCTION DEFINITION
+        # 6. FOR-IN loop: for item in collection { ... }
+        elif isinstance(node, ForInNode):
+            coll = self.evaluate_expression(node.collection_expr)
+            items = []
+            if isinstance(coll, dict):
+                items = list(coll.keys())
+            elif isinstance(coll, (list, str)):
+                items = list(coll)
+
+            for item in items:
+                if self.halted or self.return_triggered:
+                    break
+                self.set_var(node.item_name, item)
+                for stmt in node.body:
+                    if self.halted or self.return_triggered:
+                        break
+                    self.execute_node(stmt)
+
+        # 7. FUNCTION DEFINITION
         elif isinstance(node, FunctionDefNode):
             self.functions[node.name] = node
 
-        # 6. RETURN
+        # 8. RETURN
         elif isinstance(node, ReturnNode):
             self.last_return_value = self.evaluate_expression(node.expr)
             self.return_triggered = True
 
-        # 7. EXPRESSION STATEMENT (e.g. standalone func call)
+        # 9. EXPRESSION STATEMENT (e.g. standalone func call: push(arr, 1))
         elif isinstance(node, ExpressionStatementNode):
             self.evaluate_expression(node.expr)
 
-        # 8. SUMMON_PLANETEER (Register content-addressable function ring)
+        # 10. SUMMON_PLANETEER (Register content-addressable function ring)
         elif isinstance(node, SummonNode):
             self.planeteer_rings[node.ring.upper()] = node.body
 
-        # 9. CALL_RING (Dispatch by Planeteer Ring name)
+        # 11. CALL_RING (Dispatch by Planeteer Ring name)
         elif isinstance(node, CallRingNode):
             ring = node.ring.upper()
             if ring in self.planeteer_rings:
@@ -280,7 +461,7 @@ class DexterVM:
                 else:
                     self.stdout.append(f"[CAPTAIN_PLANET] [WARNING] No matching ring '{ring}' bound in cell.")
 
-        # 10. TRANSFORM (Sailor Moon MOON_PRISM_POWER)
+        # 12. TRANSFORM (Sailor Moon MOON_PRISM_POWER)
         elif isinstance(node, TransformNode):
             val = self.evaluate_expression(node.expr)
             self.set_var(node.target_var, val)
@@ -290,16 +471,16 @@ class DexterVM:
                     break
                 self.execute_node(stmt)
 
-        # 11. FALLBACK (Tuxedo Mask registration)
+        # 13. FALLBACK (Tuxedo Mask registration)
         elif isinstance(node, FallbackNode):
             self.fallback_handler = node.body
 
-        # 12. PRINT
+        # 14. PRINT
         elif isinstance(node, PrintNode):
             val = self.evaluate_expression(node.expr)
             self.stdout.append(str(val))
 
-        # 13. MUTATE BLOCK ("Dee Dee Mutation")
+        # 15. MUTATE BLOCK ("Dee Dee Mutation")
         elif isinstance(node, MutateBlockNode):
             self.stdout.append("[DEE_DEE] (Mutation Event) 'Oooooh, what does THIS button do?!'")
             self.mutations_survived += 1
@@ -308,7 +489,7 @@ class DexterVM:
                     break
                 self.execute_node(stmt)
 
-        # 14. HALT
+        # 16. HALT
         elif isinstance(node, HaltNode):
             self.halted = True
             self.stdout.append("[THATS_ALL_FOLKS] [HALT] Program reached clean termination.")

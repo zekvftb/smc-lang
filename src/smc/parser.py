@@ -1,7 +1,8 @@
 """SMC Abstract Syntax Tree (AST) & Recursive-Descent Expression Parser.
 
 Supports arithmetic expressions, logical comparisons, if/else branching, while loops,
-user-defined functions with parameters & return values, first-class lists, and CatDog multi-framing.
+for-in iteration, dictionaries, user-defined functions with parameters & return values,
+first-class lists, compound assignments, and CatDog multi-framing.
 """
 
 from __future__ import annotations
@@ -34,6 +35,11 @@ class VariableNode(AstNode):
 @dataclass
 class ListNode(AstNode):
     elements: list[AstNode] = field(default_factory=list)
+
+
+@dataclass
+class DictNode(AstNode):
+    pairs: list[tuple[AstNode, AstNode]] = field(default_factory=list)
 
 
 @dataclass
@@ -75,6 +81,21 @@ class SetVarNode(AstNode):
 
 
 @dataclass
+class CompoundAssignNode(AstNode):
+    name: str
+    op: str
+    expr: AstNode
+
+
+@dataclass
+class IndexAssignNode(AstNode):
+    target_name: str
+    index_expr: AstNode
+    op: str
+    value_expr: AstNode
+
+
+@dataclass
 class TtlBoxNode(AstNode):
     name: str
     expr: AstNode
@@ -91,6 +112,13 @@ class IfNode(AstNode):
 @dataclass
 class WhileNode(AstNode):
     condition: AstNode
+    body: list[AstNode] = field(default_factory=list)
+
+
+@dataclass
+class ForInNode(AstNode):
+    item_name: str
+    collection_expr: AstNode
     body: list[AstNode] = field(default_factory=list)
 
 
@@ -150,14 +178,36 @@ class HaltNode(AstNode):
 
 
 # ---------------------------------------------------------------------------
+# Visual Diagnostic Formatter
+# ---------------------------------------------------------------------------
+
+def format_syntax_error(source: str, token: CanonicalToken, message: str, suggestion: str = "") -> str:
+    """Format a Rust-style visual error message with caret pointer."""
+    lines = source.splitlines()
+    line_idx = max(0, token.line - 1)
+    code_line = lines[line_idx] if line_idx < len(lines) else ""
+    caret_indent = " " * max(0, token.column - 1)
+    
+    parts = [
+        f"\n[SMC SYNTAX ERROR] at line {token.line}, column {token.column}:",
+        f"  {token.line:4d} | {code_line}",
+        f"       | {caret_indent}^ {message}",
+    ]
+    if suggestion:
+        parts.append(f"       = Hint: {suggestion}")
+    return "\n".join(parts)
+
+
+# ---------------------------------------------------------------------------
 # Parser Implementation
 # ---------------------------------------------------------------------------
 
 class SmcParser:
     """Parses CanonicalToken stream into an SMC ProgramNode AST."""
 
-    def __init__(self, tokens: list[CanonicalToken]) -> None:
+    def __init__(self, tokens: list[CanonicalToken], source_text: str = "") -> None:
         self.tokens = tokens
+        self.source = source_text
         self.pos = 0
 
     def _peek(self, offset: int = 0) -> CanonicalToken:
@@ -227,6 +277,30 @@ class SmcParser:
             self._advance()
             return LiteralNode(value=tok.value)
 
+        # First-class Dictionaries: {key: value, ...}
+        if tok.token_type == TokenType.LBRACE:
+            self._advance()
+            pairs: list[tuple[AstNode, AstNode]] = []
+            while self._peek().token_type not in (TokenType.RBRACE, TokenType.EOF):
+                key_expr = self.parse_expression()
+                if self._peek().token_type == TokenType.COLON:
+                    self._advance()
+                val_expr = self.parse_expression()
+                pairs.append((key_expr, val_expr))
+                if self._peek().token_type == TokenType.COMMA:
+                    self._advance()
+            if self._peek().token_type == TokenType.RBRACE:
+                self._advance()
+
+            expr: AstNode = DictNode(pairs=pairs)
+            while self._peek().token_type == TokenType.LBRACKET:
+                self._advance()
+                idx_expr = self.parse_expression()
+                if self._peek().token_type == TokenType.RBRACKET:
+                    self._advance()
+                expr = IndexAccessNode(target=expr, index_expr=idx_expr)
+            return expr
+
         # First-class Lists: [expr, expr, ...]
         if tok.token_type == TokenType.LBRACKET:
             self._advance()
@@ -238,8 +312,7 @@ class SmcParser:
             if self._peek().token_type == TokenType.RBRACKET:
                 self._advance()
             
-            expr: AstNode = ListNode(elements=elements)
-            # Check for chained index access: [1, 2][0]
+            expr = ListNode(elements=elements)
             while self._peek().token_type == TokenType.LBRACKET:
                 self._advance()
                 idx_expr = self.parse_expression()
@@ -267,7 +340,7 @@ class SmcParser:
             else:
                 expr = VariableNode(name=name)
 
-            # Check if indexed access: var[0]
+            # Check if indexed access: var[0] or var["key"]
             while self._peek().token_type == TokenType.LBRACKET:
                 self._advance()
                 idx_expr = self.parse_expression()
@@ -387,7 +460,25 @@ class SmcParser:
                     self._advance()
             return WhileNode(condition=cond, body=body_stmts)
 
-        # 5. FUNCTION DEFINITION: fn name(p1, p2) { ... }
+        # 5. FOR-IN: for item in collection { ... }
+        if self._match_opcode(Opcode.FOR):
+            self._advance()
+            item_name = str(self._advance().value)
+            if self._match_opcode(Opcode.IN):
+                self._advance()
+            coll_expr = self.parse_expression()
+            body_stmts: list[AstNode] = []
+            if self._peek().token_type == TokenType.LBRACE:
+                self._advance()
+                while self.pos < len(self.tokens) and self._peek().token_type != TokenType.RBRACE:
+                    s = self._parse_statement()
+                    if s:
+                        body_stmts.append(s)
+                if self._peek().token_type == TokenType.RBRACE:
+                    self._advance()
+            return ForInNode(item_name=item_name, collection_expr=coll_expr, body=body_stmts)
+
+        # 6. FUNCTION DEFINITION: fn name(p1, p2) { ... }
         if self._match_opcode(Opcode.FN):
             self._advance()
             fn_name = str(self._advance().value)
@@ -412,13 +503,13 @@ class SmcParser:
                     self._advance()
             return FunctionDefNode(name=fn_name, params=params, body=body_stmts)
 
-        # 6. RETURN: return <expr>
+        # 7. RETURN: return <expr>
         if self._match_opcode(Opcode.RETURN):
             self._advance()
             expr = self.parse_expression()
             return ReturnNode(expr=expr)
 
-        # 7. SUMMON: bind(ring="...") { ... }
+        # 8. SUMMON: bind(ring="...") { ... }
         if self._match_opcode(Opcode.SUMMON):
             self._advance()
             ring_name = "HEART"
@@ -446,7 +537,7 @@ class SmcParser:
                     self._advance()
             return SummonNode(ring=ring_name, body=body_stmts)
 
-        # 8. CALL_RING: dispatch "..."
+        # 9. CALL_RING: dispatch "..."
         if self._match_opcode(Opcode.CALL_RING):
             self._advance()
             ring_name = "HEART"
@@ -454,7 +545,7 @@ class SmcParser:
                 ring_name = str(self._advance().value).upper()
             return CallRingNode(ring=ring_name)
 
-        # 9. TRANSFORM: transform x = <expr> { ... }
+        # 10. TRANSFORM: transform x = <expr> { ... }
         if self._match_opcode(Opcode.TRANSFORM):
             self._advance()
             ident = str(self._advance().value)
@@ -472,7 +563,7 @@ class SmcParser:
                     self._advance()
             return TransformNode(target_var=ident, expr=expr, body=body_stmts)
 
-        # 10. FALLBACK: fallback { ... }
+        # 11. FALLBACK: fallback { ... }
         if self._match_opcode(Opcode.FALLBACK):
             self._advance()
             body_stmts = []
@@ -486,18 +577,44 @@ class SmcParser:
                     self._advance()
             return FallbackNode(body=body_stmts)
 
-        # 11. PRINT: print <expr>
+        # 12. PRINT: print <expr>
         if self._match_opcode(Opcode.PRINT):
             self._advance()
             expr = self.parse_expression()
             return PrintNode(expr=expr)
 
-        # 12. Standalone Function Call or Expression: my_func(a, b)
+        # 13. Compound & Indexed Assignment: x += 1, x[0] = 5, x["k"] -= 10
+        if tok.token_type == TokenType.IDENTIFIER:
+            next_tok = self._peek(1)
+            if next_tok.token_type == TokenType.LBRACKET:
+                ident = str(self._advance().value)
+                self._advance()  # skip [
+                idx_expr = self.parse_expression()
+                if self._peek().token_type == TokenType.RBRACKET:
+                    self._advance()  # skip ]
+                if self._peek().token_type in (TokenType.EQUALS, TokenType.PLUS_EQ, TokenType.MINUS_EQ, TokenType.STAR_EQ, TokenType.SLASH_EQ):
+                    op_tok = self._advance()
+                    expr = self.parse_expression()
+                    return IndexAssignNode(target_name=ident, index_expr=idx_expr, op=str(op_tok.value), value_expr=expr)
+
+            elif next_tok.token_type in (TokenType.PLUS_EQ, TokenType.MINUS_EQ, TokenType.STAR_EQ, TokenType.SLASH_EQ):
+                ident = str(self._advance().value)
+                op_tok = self._advance()
+                expr = self.parse_expression()
+                return CompoundAssignNode(name=ident, op=str(op_tok.value), expr=expr)
+            elif next_tok.token_type == TokenType.EQUALS:
+                # Reassignment: x = 10
+                ident = str(self._advance().value)
+                self._advance()  # skip =
+                expr = self.parse_expression()
+                return SetVarNode(name=ident, expr=expr)
+
+        # 14. Standalone Function Call or Expression: my_func(a, b)
         if tok.token_type == TokenType.IDENTIFIER and self._peek(1).token_type == TokenType.LPAREN:
             expr = self.parse_expression()
             return ExpressionStatementNode(expr=expr)
 
-        # 13. MUTATE BLOCK
+        # 15. MUTATE BLOCK
         if self._match_opcode(Opcode.MUTATE):
             self._advance()
             body_stmts = []
@@ -511,7 +628,7 @@ class SmcParser:
                     self._advance()
             return MutateBlockNode(body=body_stmts)
 
-        # 14. HALT
+        # 16. HALT
         if self._match_opcode(Opcode.HALT):
             self._advance()
             return HaltNode()

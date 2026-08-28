@@ -1,0 +1,61 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "SMC (Saturday Morning Cartoons)",
+  "scopeName": "source.smc",
+  "patterns": [
+    {
+      "name": "comment.line.number-sign.smc",
+      "match": "#.*$"
+    },
+    {
+      "name": "string.quoted.double.smc",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.smc",
+          "match": "\\\\."
+        }
+      ]
+    },
+    {
+      "name": "string.quoted.single.smc",
+      "begin": "'",
+      "end": "'",
+      "patterns": [
+        {
+          "name": "constant.character.escape.smc",
+          "match": "\\\\."
+        }
+      ]
+    },
+    {
+      "name": "constant.numeric.smc",
+      "match": "\\b[0-9]+(\\.[0-9]+)?\\b"
+    },
+    {
+      "name": "keyword.control.smc",
+      "match": "\\b(?i)(if|else|while|for|in|fn|return|halt|exit|transform|fallback)\\b"
+    },
+    {
+      "name": "keyword.declaration.smc",
+      "match": "\\b(?i)(let|set|var|experiment|bind|dispatch)\\b"
+    },
+    {
+      "name": "entity.name.function.special.smc",
+      "match": "\\b(?i)(acme|acme_anvil_box|moon_prism_power|tuxedo_mask|summon|call_ring)\\b"
+    },
+    {
+      "name": "support.function.builtin.smc",
+      "match": "\\b(len|push|pop|str|int|type|read_file|write_file|print|kamehameha|hadouken)\\b"
+    },
+    {
+      "name": "constant.language.toon.smc",
+      "match": "\\b(SUGAR|SPICE|EVERYTHING_NICE|CHEMICAL_X|THATS_ALL_FOLKS|COWABUNGA|MERCURY|MARS|JUPITER|VENUS|MOON|EARTH|FIRE|WIND|WATER|HEART)\\b"
+    },
+    {
+      "name": "keyword.operator.assignment.compound.smc",
+      "match": "(\\+=|-=|\\*=|/=|==|!=|<=|>=|<|>|\\+|-|\\*|/|%|=|!)"
+    }
+  ]
+}
