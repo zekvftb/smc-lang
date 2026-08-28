@@ -12,7 +12,7 @@ It translates the fundamental computational principles of **DNA and RNA** into m
 ---
 
 ## 📖 Master Handbook, Specification & Beginner's Guide
-👉 **[docs/SMC_FOR_DUMMIES.md](docs/SMC_FOR_DUMMIES.md)** *(The fun, plain-English "For Dummies" beginner tutorial!)*  
+👉 **[docs/SMC_MADE_SIMPLE.md](docs/SMC_MADE_SIMPLE.md)** *(The fun, plain-English "Made Simple" beginner tutorial!)*  
 👉 **[SMC_MASTER_HANDBOOK.md](SMC_MASTER_HANDBOOK.md)** *(The exhaustive guide with 7 real-world production blueprints!)*  
 👉 **[docs/SPECIFICATION.md](docs/SPECIFICATION.md)** *(The formal language specification and operator precedence table)*  
 👉 **[docs/GUIDE.md](docs/GUIDE.md)** *(The complete technical step-by-step tutorial)*  

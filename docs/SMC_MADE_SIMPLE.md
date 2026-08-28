@@ -1,4 +1,4 @@
-# 📺 SMC For Dummies: The Absolute Beginner's Guide to Saturday Morning Cartoons Programming
+# 📺 SMC Made Simple: The Absolute Beginner's Guide to Saturday Morning Cartoons Programming
 **A Fun, Plain-English Guide to Writing Biological, Crash-Resistant Code**  
 *Maintainer: Jason Rezek (`zekvftb@gmail.com`) — v0.7.0*
 
