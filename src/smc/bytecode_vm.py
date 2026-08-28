@@ -33,6 +33,14 @@ class BytecodeVM:
     def _execute_instructions(self, code: list[Instruction], chunk: BytecodeChunk) -> Any:
         pc = 0
         code_len = len(code)
+        stack = self.stack
+        stack_append = stack.append
+        stack_pop = stack.pop
+        globals_dict = self.globals
+        call_stack = self.call_stack
+
+        if len(call_stack) > 500:
+            raise RecursionError("[STACK OVERFLOW] Maximum call stack depth of 500 exceeded in BytecodeVM")
 
         while pc < code_len:
             inst = code[pc]
@@ -42,32 +50,32 @@ class BytecodeVM:
             pc += 1
 
             if op == BytecodeOp.LOAD_CONST:
-                self.stack.append(operand)
+                stack_append(operand)
 
             elif op == BytecodeOp.LOAD_VAR:
                 # Check local stack frame first, then globals
                 val = 0
-                if self.call_stack and operand in self.call_stack[-1]:
-                    val = self.call_stack[-1][operand]
-                elif operand in self.globals:
-                    val = self.globals[operand]
-                self.stack.append(val)
+                if call_stack and operand in call_stack[-1]:
+                    val = call_stack[-1][operand]
+                elif operand in globals_dict:
+                    val = globals_dict[operand]
+                stack_append(val)
 
             elif op == BytecodeOp.STORE_VAR:
-                val = self.stack.pop() if self.stack else 0
-                if self.call_stack:
-                    self.call_stack[-1][operand] = val
+                val = stack_pop() if stack else 0
+                if call_stack:
+                    call_stack[-1][operand] = val
                 else:
-                    self.globals[operand] = val
+                    globals_dict[operand] = val
 
             elif op == BytecodeOp.COMPOUND_ASSIGN:
                 name, assign_op = operand
-                rhs = self.stack.pop() if self.stack else 0
+                rhs = stack_pop() if stack else 0
                 curr = 0
-                if self.call_stack and name in self.call_stack[-1]:
-                    curr = self.call_stack[-1][name]
-                elif name in self.globals:
-                    curr = self.globals[name]
+                if call_stack and name in call_stack[-1]:
+                    curr = call_stack[-1][name]
+                elif name in globals_dict:
+                    curr = globals_dict[name]
 
                 if assign_op == "+=":
                     if isinstance(curr, str) or isinstance(rhs, str):
@@ -85,89 +93,89 @@ class BytecodeVM:
                 else:
                     new_val = rhs
 
-                if self.call_stack:
-                    self.call_stack[-1][name] = new_val
+                if call_stack:
+                    call_stack[-1][name] = new_val
                 else:
-                    self.globals[name] = new_val
+                    globals_dict[name] = new_val
 
             elif op == BytecodeOp.BINARY_OP:
-                right = self.stack.pop() if self.stack else 0
-                left = self.stack.pop() if self.stack else 0
+                right = stack_pop() if stack else 0
+                left = stack_pop() if stack else 0
                 
                 if operand == "+":
                     if isinstance(left, str) or isinstance(right, str):
-                        self.stack.append(str(left) + str(right))
+                        stack_append(str(left) + str(right))
                     elif isinstance(left, list) and isinstance(right, list):
-                        self.stack.append(left + right)
+                        stack_append(left + right)
                     else:
-                        self.stack.append(left + right)
+                        stack_append(left + right)
                 elif operand == "-":
-                    self.stack.append(left - right)
+                    stack_append(left - right)
                 elif operand == "*":
-                    self.stack.append(left * right)
+                    stack_append(left * right)
                 elif operand == "/":
-                    self.stack.append(left / right if right != 0 else 0)
+                    stack_append(left / right if right != 0 else 0)
                 elif operand == "%":
-                    self.stack.append(left % right if right != 0 else 0)
+                    stack_append(left % right if right != 0 else 0)
                 elif operand == "==":
-                    self.stack.append(left == right)
+                    stack_append(left == right)
                 elif operand == "!=":
-                    self.stack.append(left != right)
+                    stack_append(left != right)
                 elif operand == "<":
-                    self.stack.append(left < right)
+                    stack_append(left < right)
                 elif operand == "<=":
-                    self.stack.append(left <= right)
+                    stack_append(left <= right)
                 elif operand == ">":
-                    self.stack.append(left > right)
+                    stack_append(left > right)
                 elif operand == ">=":
-                    self.stack.append(left >= right)
+                    stack_append(left >= right)
                 elif operand in ("&&", "and"):
-                    self.stack.append(bool(left) and bool(right))
+                    stack_append(bool(left) and bool(right))
                 elif operand in ("||", "or"):
-                    self.stack.append(bool(left) or bool(right))
+                    stack_append(bool(left) or bool(right))
 
             elif op == BytecodeOp.UNARY_OP:
-                val = self.stack.pop() if self.stack else 0
+                val = stack_pop() if stack else 0
                 if operand == "-":
-                    self.stack.append(-val)
+                    stack_append(-val)
                 elif operand == "!":
-                    self.stack.append(not bool(val))
+                    stack_append(not bool(val))
 
             elif op == BytecodeOp.BUILD_LIST:
                 count = int(operand)
                 items = []
                 for _ in range(count):
-                    items.append(self.stack.pop())
+                    items.append(stack_pop())
                 items.reverse()
-                self.stack.append(items)
+                stack_append(items)
 
             elif op == BytecodeOp.BUILD_DICT:
                 count = int(operand)
                 pairs = []
                 for _ in range(count):
-                    v = self.stack.pop()
-                    k = self.stack.pop()
+                    v = stack_pop()
+                    k = stack_pop()
                     pairs.append((k, v))
                 pairs.reverse()
-                self.stack.append(dict(pairs))
+                stack_append(dict(pairs))
 
             elif op == BytecodeOp.INDEX_GET:
-                idx = self.stack.pop() if self.stack else 0
-                target = self.stack.pop() if self.stack else 0
+                idx = stack_pop() if stack else 0
+                target = stack_pop() if stack else 0
                 if isinstance(target, dict):
-                    self.stack.append(target.get(idx, 0))
+                    stack_append(target.get(idx, 0))
                 elif isinstance(target, (list, str)):
                     try:
-                        self.stack.append(target[int(idx)])
+                        stack_append(target[int(idx)])
                     except (IndexError, TypeError, ValueError):
-                        self.stack.append(0)
+                        stack_append(0)
                 else:
-                    self.stack.append(0)
+                    stack_append(0)
 
             elif op == BytecodeOp.INDEX_SET:
-                val = self.stack.pop() if self.stack else 0
-                idx = self.stack.pop() if self.stack else 0
-                target = self.stack.pop() if self.stack else {}
+                val = stack_pop() if stack else 0
+                idx = stack_pop() if stack else 0
+                target = stack_pop() if stack else {}
                 if isinstance(target, dict):
                     target[idx] = val
                 elif isinstance(target, list):
@@ -180,7 +188,7 @@ class BytecodeVM:
                 pc = int(operand)
 
             elif op == BytecodeOp.JUMP_IF_FALSE:
-                cond = self.stack.pop() if self.stack else False
+                cond = stack_pop() if stack else False
                 if not bool(cond):
                     pc = int(operand)
 
@@ -188,33 +196,33 @@ class BytecodeVM:
                 fn_name, argc = operand
                 args = []
                 for _ in range(argc):
-                    args.append(self.stack.pop())
+                    args.append(stack_pop())
                 args.reverse()
 
                 # If user defined function
                 if fn_name in chunk.functions:
                     fn_def = chunk.functions[fn_name]
                     frame = dict(zip(fn_def.params, args))
-                    self.call_stack.append(frame)
+                    call_stack.append(frame)
                     ret_val = self._execute_instructions(fn_def.code, chunk)
-                    self.call_stack.pop()
-                    self.stack.append(ret_val)
+                    call_stack.pop()
+                    stack_append(ret_val)
                 elif self.dexter_helper._is_builtin(fn_name):
                     res = self.dexter_helper._call_builtin(fn_name, args)
-                    self.stack.append(res)
+                    stack_append(res)
                 else:
-                    self.stack.append(0)
+                    stack_append(0)
 
             elif op == BytecodeOp.PRINT:
-                val = self.stack.pop() if self.stack else ""
+                val = stack_pop() if stack else ""
                 self.stdout.append(str(val))
 
             elif op == BytecodeOp.POP_TOP:
-                if self.stack:
-                    self.stack.pop()
+                if stack:
+                    stack_pop()
 
             elif op == BytecodeOp.RETURN:
-                return self.stack.pop() if self.stack else 0
+                return stack_pop() if stack else 0
 
             elif op == BytecodeOp.HALT:
                 break

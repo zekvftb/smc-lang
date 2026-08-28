@@ -86,16 +86,105 @@ class BytecodeChunk:
         return idx
 
 
-class BytecodeCompiler:
-    """Compiles AST ProgramNode into a flat BytecodeChunk."""
+class PeepholeOptimizer:
+    """Performs compile-time constant folding and instruction optimization."""
 
-    def __init__(self) -> None:
+    @staticmethod
+    def fold_constants(instructions: list[Instruction]) -> list[Instruction]:
+        if len(instructions) < 3:
+            return instructions
+
+        optimized: list[Instruction] = []
+        i = 0
+        n = len(instructions)
+
+        while i < n:
+            # Check for pattern: LOAD_CONST c1, LOAD_CONST c2, BINARY_OP op
+            if i <= n - 3:
+                inst1 = instructions[i]
+                inst2 = instructions[i + 1]
+                inst3 = instructions[i + 2]
+
+                if (
+                    inst1.op == BytecodeOp.LOAD_CONST
+                    and inst2.op == BytecodeOp.LOAD_CONST
+                    and inst3.op == BytecodeOp.BINARY_OP
+                ):
+                    c1 = inst1.operand
+                    c2 = inst2.operand
+                    op = inst3.operand
+                    folded = None
+
+                    try:
+                        if op == "+":
+                            if isinstance(c1, (int, float, str)) and isinstance(c2, (int, float, str)):
+                                folded = (str(c1) + str(c2)) if (isinstance(c1, str) or isinstance(c2, str)) else (c1 + c2)
+                        elif op == "-" and isinstance(c1, (int, float)) and isinstance(c2, (int, float)):
+                            folded = c1 - c2
+                        elif op == "*" and isinstance(c1, (int, float)) and isinstance(c2, (int, float)):
+                            folded = c1 * c2
+                        elif op == "/" and isinstance(c1, (int, float)) and isinstance(c2, (int, float)) and c2 != 0:
+                            folded = c1 / c2
+                        elif op == "%" and isinstance(c1, (int, float)) and isinstance(c2, (int, float)) and c2 != 0:
+                            folded = c1 % c2
+                        elif op == "==":
+                            folded = (c1 == c2)
+                        elif op == "!=":
+                            folded = (c1 != c2)
+                        elif op == "<" and isinstance(c1, (int, float)) and isinstance(c2, (int, float)):
+                            folded = (c1 < c2)
+                        elif op == "<=" and isinstance(c1, (int, float)) and isinstance(c2, (int, float)):
+                            folded = (c1 <= c2)
+                        elif op == ">" and isinstance(c1, (int, float)) and isinstance(c2, (int, float)):
+                            folded = (c1 > c2)
+                        elif op == ">=" and isinstance(c1, (int, float)) and isinstance(c2, (int, float)):
+                            folded = (c1 >= c2)
+                    except Exception:
+                        folded = None
+
+                    if folded is not None:
+                        # Replace 3 instructions with 1 folded constant
+                        optimized.append(Instruction(BytecodeOp.LOAD_CONST, folded, line=inst1.line))
+                        i += 3
+                        continue
+
+            optimized.append(instructions[i])
+            i += 1
+
+        return optimized
+
+    @classmethod
+    def optimize(cls, instructions: list[Instruction]) -> list[Instruction]:
+        prev_len = len(instructions)
+        res = cls.fold_constants(instructions)
+        # Iteratively fold until fixed-point (max 10 iterations)
+        iters = 0
+        while len(res) < prev_len and iters < 10:
+            prev_len = len(res)
+            res = cls.fold_constants(res)
+            iters += 1
+        return res
+
+
+class BytecodeCompiler:
+    """Compiles AST ProgramNode into a flat, optimized BytecodeChunk."""
+
+    def __init__(self, optimize: bool = True) -> None:
         self.chunk = BytecodeChunk()
+        self.optimize = optimize
 
     def compile(self, program: ProgramNode) -> BytecodeChunk:
         for stmt in program.statements:
             self._compile_statement(stmt, self.chunk.instructions)
         self.chunk.emit(BytecodeOp.HALT)
+
+        if self.optimize:
+            # Optimize top-level bytecode
+            self.chunk.instructions = PeepholeOptimizer.optimize(self.chunk.instructions)
+            # Optimize user functions
+            for fn in self.chunk.functions.values():
+                fn.code = PeepholeOptimizer.optimize(fn.code)
+
         return self.chunk
 
     def _compile_statement(self, node: AstNode, instructions: list[Instruction]) -> None:
