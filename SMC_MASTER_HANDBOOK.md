@@ -236,3 +236,14 @@ SMC enforces an 8-level Pratt parsing hierarchy. Subscript indexing (`[]`) and f
   }
   ```
 * **Response Structure:** Expects `{"status": int, "content_type": str, "body": str}`. Raw strings are automatically wrapped with `HTTP 200 OK text/html; charset=utf-8`.
+
+### 5.6 Content-Addressable Ring Binding & Dispatch (`bind` / `dispatch` / `fallback`)
+* **Syntax:** `bind(ring = expr) { stmts }`, `dispatch expr`, `fallback { stmts }`
+* **Key Coercion:** Ring keys are normalized to uppercase string representations:
+  $$\text{key}_{ring} \leftarrow \text{upper}(\text{str}(\text{eval}(expr)))$$
+  Thus `bind(ring="fire")` and `dispatch "FIRE"` match identically.
+* **Watchdog Execution:** If `dispatch` targets an unmapped ring key, the runtime executes the registered `fallback` block (Tuxedo Mask Watchdog). If no fallback is registered, execution proceeds without raising errors.
+
+### 5.7 Lexical & Compatibility Notes (Legacy CatDog Framing)
+* **Legacy Dual-Frame Mode (`catdog`):** For backward compatibility with SMC v0.1.0 dual-frame source files, the `smc catdog <file>.smc` CLI command decomposes the token stream into alternating even (Cat track, Phase +0) and odd (Dog track, Phase +1) subroutines, executing both sequentially.
+
