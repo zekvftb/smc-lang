@@ -144,7 +144,8 @@ class DexterVM:
             "serve_http", "to_json", "from_json", "range", "split", "join", "keys",
             "values", "contains", "serve_file", "py_call", "py_eval", "py_import",
             "hexaphase_compile", "hexaphase_decompile", "hexaphase_channels", "phase_slip",
-            "slip_branch", "g4_latch", "hexaphase_window", "stem_loop_dg", "min", "max"
+            "slip_branch", "g4_latch", "hexaphase_window", "stem_loop_dg", "min", "max",
+            "window", "count_matches", "clamp", "round", "fsm_transition", "fsm_run"
         )
 
     def _call_builtin(self, name: str, args: list[Any]) -> Any:
@@ -463,6 +464,74 @@ class DexterVM:
             gc_count = s.count("G") + s.count("C")
             au_count = s.count("A") + s.count("U")
             return round(-2.5 * gc_count - 1.2 * au_count + 3.5, 2)
+
+        if fn == "window":
+            # window(data, size, step=1)
+            if not args:
+                return []
+            target = args[0]
+            size = int(args[1]) if len(args) > 1 else 3
+            step = int(args[2]) if len(args) > 2 else 1
+            if size <= 0 or step <= 0 or not hasattr(target, "__len__"):
+                return []
+            res = []
+            for i in range(0, len(target) - size + 1, step):
+                res.append(target[i : i + size])
+            return res
+
+        if fn == "count_matches":
+            # count_matches(text_or_list, pattern)
+            if len(args) < 2:
+                return 0
+            target = args[0]
+            pat = args[1]
+            if isinstance(target, str):
+                return target.count(str(pat))
+            if isinstance(target, list):
+                return target.count(pat)
+            return 0
+
+        if fn == "clamp":
+            # clamp(val, min_val, max_val)
+            if not args:
+                return 0
+            val = float(args[0])
+            min_v = float(args[1]) if len(args) > 1 else 0.0
+            max_v = float(args[2]) if len(args) > 2 else val
+            return max(min_v, min(val, max_v))
+
+        if fn == "round":
+            # round(val, decimals=0)
+            if not args:
+                return 0
+            val = float(args[0])
+            dec = int(args[1]) if len(args) > 1 else 0
+            return round(val, dec) if dec > 0 else int(round(val))
+
+        if fn == "fsm_transition":
+            # fsm_transition(current_state, event, transition_table)
+            if len(args) < 3:
+                return args[0] if args else "INITIAL"
+            curr, event, table = str(args[0]), str(args[1]), args[2]
+            if isinstance(table, dict) and curr in table:
+                transitions = table[curr]
+                if isinstance(transitions, dict) and event in transitions:
+                    return transitions[event]
+            return curr
+
+        if fn == "fsm_run":
+            # fsm_run(initial_state, event_list, transition_table)
+            if len(args) < 3:
+                return {"final_state": args[0] if args else "INITIAL", "history": []}
+            curr = str(args[0])
+            events = args[1] if isinstance(args[1], list) else []
+            table = args[2] if isinstance(args[2], dict) else {}
+            history = [curr]
+            for ev in events:
+                if curr in table and isinstance(table[curr], dict) and str(ev) in table[curr]:
+                    curr = table[curr][str(ev)]
+                history.append(curr)
+            return {"final_state": curr, "history": history}
 
         if fn == "serve_http":
             if not args:

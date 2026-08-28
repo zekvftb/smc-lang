@@ -226,6 +226,73 @@ def init_project(project_name: str, base_path: Path | None = None) -> Path:
     return project_dir
 
 
+def debug_file(file_path: Path | str) -> None:
+    path = Path(file_path)
+    if not path.is_file():
+        print(f"Error: File not found at '{path}'")
+        sys.exit(1)
+
+    source = path.read_text(encoding="utf-8")
+    tokens = SmcLexer(source).tokenize()
+    ast = SmcParser(tokens).parse()
+
+    vm = DexterVM()
+    vm.current_file = path.resolve()
+
+    print("\n==================================================================")
+    print(f"🐞 SMC Interactive Step Debugger: {path.name}")
+    print("Commands: (s)tep | (v)ars | (c)ontinue | eval <expr> | (q)uit")
+    print("==================================================================\n")
+
+    statements = ast.body
+    total_stmts = len(statements)
+    idx = 0
+    continuous = False
+
+    while idx < total_stmts:
+        stmt = statements[idx]
+        node_name = stmt.__class__.__name__
+
+        if not continuous:
+            prompt = f"[{idx+1}/{total_stmts}] {node_name} > "
+            try:
+                cmd = input(prompt).strip()
+            except (EOFError, KeyboardInterrupt):
+                print("\n[DEBUGGER] Aborted.")
+                break
+
+            if cmd in ("q", "quit", "exit"):
+                print("[DEBUGGER] Exiting.")
+                break
+            elif cmd in ("v", "vars"):
+                print(f"  Active Variables: {vm.variables}")
+                continue
+            elif cmd.startswith("eval "):
+                expr_src = cmd[5:].strip()
+                try:
+                    expr_tokens = SmcLexer(expr_src).tokenize()
+                    expr_node = SmcParser(expr_tokens).parse_expression()
+                    res = vm.evaluate_expression(expr_node)
+                    print(f"  => {res}")
+                except Exception as e:
+                    print(f"  [EVAL ERROR] {e}")
+                continue
+            elif cmd in ("c", "cont", "continue"):
+                continuous = True
+
+        # Execute statement
+        vm.execute_node(stmt)
+        if vm.stdout:
+            while vm.stdout:
+                line = vm.stdout.pop(0)
+                print(f"  [OUT] {line}")
+        idx += 1
+
+    print("\n==================================================================")
+    print(f"✅ Debugger finished. Final Variables: {vm.variables}")
+    print("==================================================================\n")
+
+
 def main() -> None:
     # If invoked with no arguments, launch REPL directly
     if len(sys.argv) == 1:
@@ -249,6 +316,10 @@ def main() -> None:
     run_parser = subparsers.add_parser("run", help="Execute an SMC script")
     run_parser.add_argument("file", type=str, help="Path to .smc file")
 
+    # debug command
+    debug_parser = subparsers.add_parser("debug", help="Step-debug an SMC script interactively")
+    debug_parser.add_argument("file", type=str, help="Path to .smc file")
+
     # catdog command
     catdog_parser = subparsers.add_parser("catdog", help="Execute dual-frame CatDog interleaved program")
     catdog_parser.add_argument("file", type=str, help="Path to .smc file")
@@ -265,6 +336,8 @@ def main() -> None:
         init_project(args.name)
     elif args.command == "run":
         run_file(args.file)
+    elif args.command == "debug":
+        debug_file(args.file)
     elif args.command == "catdog":
         run_catdog(args.file)
     elif args.command == "tokens":

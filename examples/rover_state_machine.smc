@@ -1,0 +1,66 @@
+# ==============================================================================
+# Mars Planetary Rover Power & Science State Machine
+# Demonstrating Native FSM Transitions, Clamping, and Window Buffering in SMC
+# ==============================================================================
+
+print("==================================================================")
+print("🤖 Mars Exploration Rover: Autonomous Power & Science State Machine")
+print("==================================================================")
+
+# 1. Define Discrete FSM Transition Matrix
+var rover_fsm = {
+    "SLEEP": {
+        "SUNRISE": "CHARGING",
+        "EMERGENCY": "SAFE_MODE"
+    },
+    "CHARGING": {
+        "BATTERY_FULL": "SCIENCE_OPERATIONS",
+        "DUST_STORM": "SLEEP",
+        "SUNSET": "SLEEP"
+    },
+    "SCIENCE_OPERATIONS": {
+        "TASK_COMPLETE": "DRIVING",
+        "BATTERY_LOW": "SLEEP",
+        "SAMPLE_ANALYZED": "CHARGING"
+    },
+    "DRIVING": {
+        "DESTINATION_REACHED": "SCIENCE_OPERATIONS",
+        "OBSTACLE_DETECTED": "CHARGING",
+        "SUNSET": "SLEEP"
+    },
+    "SAFE_MODE": {
+        "REBOOT_SIGNAL": "SLEEP"
+    }
+}
+
+# 2. Simulate Mission Event Stream
+var mission_events = [
+    "SUNRISE",
+    "BATTERY_FULL",
+    "SAMPLE_ANALYZED",
+    "BATTERY_FULL",
+    "TASK_COMPLETE",
+    "DESTINATION_REACHED",
+    "SUNSET"
+]
+
+var mission_result = fsm_run("SLEEP", mission_events, rover_fsm)
+
+print("\n--- Mission Lifecycle State Progression ---")
+print("Full FSM Execution Path: " + to_json(mission_result["history"]))
+print("Final Rover State: [" + mission_result["final_state"] + "]")
+
+# 3. Simulate Sensor Clamping and Windowed Signal Averaging
+var raw_solar_voltage = 142.5
+var safe_voltage = clamp(raw_solar_voltage, 0.0, 100.0)
+print("\n--- Sensor Processing Toolkit ---")
+print("Raw Solar Panel Input: " + str(raw_solar_voltage) + " V")
+print("Regulated Clamp Output: " + str(safe_voltage) + " V")
+
+var sensor_stream = [22.1, 23.4, 21.9, 25.6, 28.0, 24.1]
+var smoothed_windows = window(sensor_stream, 3, 1)
+print("Spectrometer Sliding 3-Point Windows: " + to_json(smoothed_windows))
+
+print("\n==================================================================")
+print("✅ Rover FSM Simulation Complete.")
+print("==================================================================")
