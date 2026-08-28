@@ -111,7 +111,7 @@ OPCODE_SYNONYMS: dict[Opcode, list[str]] = {
         "IN", "INSIDE", "FROM"
     ],
     Opcode.FN: [
-        "FN", "FUNCTION", "DEF", "SUBROUTINE", "RECIPE", "TECHNIQUE"
+        "FN", "FUNC", "FUNCTION", "DEF", "SUBROUTINE", "RECIPE", "TECHNIQUE"
     ],
     Opcode.RETURN: [
         "RETURN", "YIELD", "GIVE", "PAYLOAD"

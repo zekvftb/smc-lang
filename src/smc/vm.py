@@ -143,7 +143,8 @@ class DexterVM:
             "len", "push", "pop", "str", "int", "type", "read_file", "write_file",
             "serve_http", "to_json", "from_json", "range", "split", "join", "keys",
             "values", "contains", "serve_file", "py_call", "py_eval", "py_import",
-            "hexaphase_compile", "hexaphase_decompile", "hexaphase_channels", "phase_slip"
+            "hexaphase_compile", "hexaphase_decompile", "hexaphase_channels", "phase_slip",
+            "slip_branch", "g4_latch", "hexaphase_window", "stem_loop_dg", "min", "max"
         )
 
     def _call_builtin(self, name: str, args: list[Any]) -> Any:
@@ -395,6 +396,73 @@ class DexterVM:
             offset = int(args[1]) if len(args) > 1 else 1
             offset = offset % len(s) if len(s) > 0 else 0
             return s[offset:] + s[:offset]
+
+        if fn == "min":
+            if not args:
+                return 0
+            if len(args) == 1 and isinstance(args[0], (list, tuple)):
+                return min(args[0]) if args[0] else 0
+            return min(args)
+
+        if fn == "max":
+            if not args:
+                return 0
+            if len(args) == 1 and isinstance(args[0], (list, tuple)):
+                return max(args[0]) if args[0] else 0
+            return max(args)
+
+        if fn == "slip_branch":
+            # slip_branch(prob_pct, val_or_fn_a, val_or_fn_b)
+            if not args:
+                return None
+            prob = float(args[0]) if len(args) > 0 else 50.0
+            choice_a = args[1] if len(args) > 1 else True
+            choice_b = args[2] if len(args) > 2 else False
+
+            roll = self.rng.uniform(0.0, 100.0)
+            chosen = choice_a if roll <= prob else choice_b
+            if isinstance(chosen, str) and chosen in self.functions:
+                return self._call_function(chosen, [])
+            return chosen
+
+        if fn == "g4_latch":
+            # g4_latch(current_level, threshold)
+            if not args:
+                return False
+            level = float(args[0])
+            thresh = float(args[1]) if len(args) > 1 else 100.0
+            is_tripped = level >= thresh
+            if is_tripped:
+                self.stdout.append(f"[G4_LATCH] Molecular circuit breaker tripped at stress {level:.1f} (Threshold: {thresh:.1f}).")
+            return is_tripped
+
+        if fn == "hexaphase_window":
+            # hexaphase_window(seq, frame, window_size)
+            if not args:
+                return []
+            s = str(args[0])
+            frame = str(args[1]) if len(args) > 1 else "+0"
+            w_size = int(args[2]) if len(args) > 2 else 3
+
+            if frame.startswith("-"):
+                s = s[::-1]
+            offset = 0
+            if frame in ("+1", "-1", "1", "-1"):
+                offset = 1
+            elif frame in ("+2", "-2", "2", "-2"):
+                offset = 2
+
+            s_frame = s[offset:]
+            return [s_frame[i : i + w_size] for i in range(0, len(s_frame) - w_size + 1, w_size)]
+
+        if fn == "stem_loop_dg":
+            # Quick nearest-neighbor dG estimation
+            if not args:
+                return 0.0
+            s = str(args[0]).upper().replace("T", "U")
+            gc_count = s.count("G") + s.count("C")
+            au_count = s.count("A") + s.count("U")
+            return round(-2.5 * gc_count - 1.2 * au_count + 3.5, 2)
 
         if fn == "serve_http":
             if not args:
