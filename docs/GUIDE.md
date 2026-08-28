@@ -317,57 +317,93 @@ fallback {
 dispatch "UNBOUND_SERVICE"
 ```
 
-### Superpower 6: CatDog Overlapping Bytecode (2 Programs in 1)
-*Biological Principle: Multi-Frame Reading Frames*
+### Superpower 6: HexaPhase Multiplexing & Ribosomal Slipping (v0.7.0)
+*Biological Principle: 6-Phase Reading Frames & Programmed Frameshifting (PRF)*
 
-Write two distinct routines on the exact same line of code and execute with `smc catdog` for 2x memory density.
+Slice any stream into 6 concurrent reading phases (`+0, +1, +2, -0, -1, -2`) and dynamically shift execution tracks under load:
+```smc
+experiment "HexaPhase_Demo"
+
+# 1. HexaPhase Multiplexing Block
+hexaphase "ABCDEF" {
+    let p0 = hexaphase_channels["+0"] # "AD"
+    let p1 = hexaphase_channels["+1"] # "BE"
+}
+
+# 2. Programmed Ribosomal Frameshift (PRF)
+slip(1) # Shifts execution track into Phase +1
+
+# 3. Thermodynamic Attenuator Rate-Limiting Gate
+attenuator(threshold = 500) {
+    print "Attenuator active: Backpressure throttled."
+}
+
+halt
+```
 
 ---
 
-## 7. The Complete Cartoon Opcode Dictionary
+## 7. Python Ecosystem FFI Bridge & Web Server
 
-| Canonical Opcode | Sailor Moon & Cartoon Synonyms | What It Does |
-| :--- | :--- | :--- |
-| **`LET`** | `SET`, `VAR`, `SUGAR`, `SPICE`, `EVERYTHING_NICE` | Assigns a persistent variable |
-| **`ACME(ttl=N)`** | `ACME_ANVIL_BOX`, `EPHEMERAL`, `ANVIL_BOX` | Ephemeral variable with auto-drop timer |
-| **`IF` / `ELSE`** | `WHEN` / `OTHERWISE` | Conditional branching |
-| **`WHILE`** | `LOOP`, `CYCLE`, `ROAD_RUNNER_LOOP` | Iteration loop |
-| **`TRANSFORM`** | `MOON_PRISM_POWER`, `DIFFERENTIATE`, `EVOLVE` | Sailor Moon state transformation |
-| **`FALLBACK`** | `TUXEDO_MASK`, `CATCH`, `ROSE_THROW` | Watchdog fallback handler |
-| **`BIND`** | `SUMMON_PLANETEER`, `CAPTAIN_PLANET`, `RING_BIND` | Binds a function to a planetary ring shape |
-| **`DISPATCH`** | `CALL`, `POWERS_COMBINED`, `I_CHOOSE_YOU` | Shape-based lock-and-key function calling |
-| **`PRINT`** | `EMIT`, `KAMEHAMEHA`, `SAY`, `HADOUKEN` | Prints expression to stdout |
-| **`HALT`** | `EXIT`, `RETURN`, `THATS_ALL_FOLKS`, `COWABUNGA` | Halts execution cleanly |
+### Python FFI Bridge (`py_call`, `py_eval`, `py_import`)
+Access all of Python's standard library and scientific packages:
+```smc
+let root = py_call("math.sqrt", 256)
+py_import "datetime" as dt
+let now = py_call("datetime.datetime.now")
+print `Square root: ${root}, Timestamp: ${now}`
+```
+
+### Full-Stack Web Server (`serve_http`)
+```smc
+fn handle_request(req) {
+    let path = req["path"]
+    if (path == "/") {
+        return { "status": 200, "content_type": "text/html", "body": "<h1>SMC Laboratory Online</h1>" }
+    }
+    return { "status": 404, "body": "Not Found" }
+}
+
+serve_http(3000, "handle_request")
+```
 
 ---
 
-## 7. Running & Debugging Your Code
+## 8. Formal Language Specification
+👉 **For complete operator precedence tables, lexical grammar, and edge-case policies, see [docs/SPECIFICATION.md](SPECIFICATION.md)**!
 
-### Run normally:
+---
+
+## 9. Running & Debugging Your Code
+
+### Run an SMC program:
 ```powershell
-python -m smc.cli run path/to/script.smc
+smc run path/to/script.smc
+# or: python -m smc.cli run path/to/script.smc
+```
+
+### Launch the interactive REPL:
+```powershell
+smc repl
+```
+
+### Initialize a new project scaffold:
+```powershell
+smc init my_app
 ```
 
 ### Inspect repaired mutations & tokens:
 ```powershell
-python -m smc.cli tokens path/to/script.smc
-```
-This will print every token in your file and highlight any typos that were repaired via codon degeneracy:
-```
-Line 02:01 | KEYWORD | 'KAMAHAMEHA' -> Opcode.PRINT [MUTATION REPAIRED!]
+smc tokens path/to/script.smc
 ```
 
 ---
 
-## 8. Visual Studio Code Syntax Highlighting
+## 10. Visual Studio Code Extension
 
-To give your `.smc` files syntax highlighting in VS Code:
-
+To install syntax highlighting and language support:
 ```powershell
-# Copy the included extension to your local VS Code extensions folder:
-Copy-Item -Recurse D:\smc_lang\editors\vscode "$HOME\.vscode\extensions\smc-lang"
+code --install-extension editors/vscode/smc-lang-0.7.0.vsix
 ```
 
-Reload VS Code (`Ctrl+Shift+P` -> "Developer: Reload Window"), and all keywords, Acme boxes, and Sailor Moon transformations will glow in full color!
-
-Have fun experimenting in the laboratory!
+Have fun experimenting in Dexter's Laboratory! 🧪
