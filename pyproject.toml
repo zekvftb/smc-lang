@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "smc-lang"
+version = "0.1.0"
+description = "Saturday Morning Cartoons (SMC): A biologically inspired, fault-tolerant programming language and VM"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "SMC Cartoon Lab Contributors" }
+]
+license = { text = "MIT" }
+keywords = ["programming-language", "virtual-machine", "biology-inspired", "fault-tolerant", "cartoons"]
+dependencies = []
+
+[project.scripts]
+smc = "smc.cli:main"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --tb=short"

@@ -1,0 +1,30 @@
+# =============================================================
+# SMC SAMPLE: Captain Planet Content-Addressable Calling
+# =============================================================
+# Demonstrates shape-based / pattern-matched function dispatch:
+# Instead of calling arbitrary memory addresses (0x7FFF0042),
+# callers emit elemental Planeteer Ring keys that automatically bind to targets!
+
+DEXTER_LAB_EXPERIMENT "Planeteer_Ecosystem_Defense"
+
+# 1. Bind content-addressable Planeteer Rings
+SUMMON_PLANETEER(ring="EARTH") {
+    KAMEHAMEHA "Kwame: Earth power tremor deployed!"
+}
+
+SUMMON_PLANETEER(ring="FIRE") {
+    KAMEHAMEHA "Wheeler: Fire blast deployed!"
+}
+
+SUMMON_PLANETEER(ring="HEART") {
+    KAMEHAMEHA "Ma-Ti: Heart power activated - biological empathy online!"
+}
+
+# 2. Invoke functions by matching shape/ring
+KAMEHAMEHA "Calling Planeteer Rings across the network..."
+POWERS_COMBINED "EARTH"
+POWERS_COMBINED "FIRE"
+POWERS_COMBINED "HEART"
+
+KAMEHAMEHA "The power is yours!"
+THATS_ALL_FOLKS

@@ -1,0 +1,27 @@
+# =============================================================
+# SMC SAMPLE: Powerpuff Girls (Chemical State & Acme Anvil TTL)
+# =============================================================
+DEXTER_LAB_EXPERIMENT "Powerpuff_Genesis"
+
+# 1. State initialization using biological degenerate synonyms
+SUGAR sugar_amount = 100
+SPICE spice_amount = 50
+EVERYTHING_NICE nice_amount = 25
+
+KAMEHAMEHA "Sugar, Spice, and Everything Nice mixed in the beaker!"
+
+# 2. Acme Ephemeral Memory (TTL = 2 execution ticks)
+# Inspired by mRNA half-life: auto-vaporizes without garbage collector pauses
+ACME_ANVIL_BOX(ttl=2) professor_utonium_secret_recipe = "Ultra_Secret_Compound"
+KAMEHAMEHA professor_utonium_secret_recipe
+
+# 3. Accidental Mutation Event (Dee Dee pushed the button!)
+DEE_DEE_MUTATION {
+    CHEMICAL_X = 9999
+    KAMEHAMEHA "Accident occurred: Chemical X added!"
+}
+
+# Notice: After 2 execution ticks, the Acme Anvil dropped on professor_utonium_secret_recipe!
+
+KAMEHAMEHA "Townsville is saved!"
+THATS_ALL_FOLKS

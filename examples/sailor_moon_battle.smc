@@ -1,0 +1,71 @@
+# =============================================================
+# SMC SAMPLE: Sailor Moon Battle & Planetary Defense
+# =============================================================
+# Showcases Python Parity:
+# - Full arithmetic expressions with order of operations
+# - While loops and If/Else conditionals
+# - Acme Ephemeral Memory with built-in decay (no GC)
+# - Sailor Moon transformations (MOON_PRISM_POWER)
+# - Tuxedo Mask watchdog fallback handler
+
+experiment "Sailor_Moon_Battle_Simulator"
+
+# 1. State setup with math expressions
+let enemy_hp = 100
+let attack_power = (15 * 2) - 5   # (30) - 5 = 25
+let turn_count = 0
+
+print "Dark Kingdom monster appeared! Initial HP: "
+print enemy_hp
+
+# 2. Register Tuxedo Mask Watchdog Fallback
+fallback {
+    print "Tuxedo Mask throws a red rose! 'Sailor Moon, now is your chance!'"
+}
+
+# 3. Register Planetary Senshi Rings
+bind(ring="MERCURY") {
+    print "Sailor Mercury: 'Mercury Aqua Rhapsody!' (Telemetry validated)"
+}
+
+bind(ring="MARS") {
+    print "Sailor Mars: 'Mars Flame Sniper!' (Direct attack triggered)"
+}
+
+# 4. Turn-based combat loop (while loop)
+while (enemy_hp > 0) {
+    let turn_count = turn_count + 1
+    print "--- Turn Number ---"
+    print turn_count
+
+    # Acme Anvil ephemeral shield (auto-expires in 2 turns without garbage collection)
+    acme(ttl=2) planetary_shield = "Active_Crystal_Barrier"
+    print "Defense Barrier: "
+    print planetary_shield
+
+    # Conditional attack
+    if (turn_count == 1) {
+        dispatch "MERCURY"
+        let enemy_hp = enemy_hp - attack_power
+    } else {
+        dispatch "MARS"
+        let enemy_hp = enemy_hp - (attack_power * 2)
+    }
+
+    print "Enemy Remaining HP: "
+    print enemy_hp
+}
+
+# 5. Final Sailor Moon Climax Transformation
+let guardian = "Usagi_Tsukino"
+transform guardian = "Princess_Serenity" {
+    print "Moon Healing Escalation!"
+    print "The Dark Kingdom monster has been cleansed."
+}
+
+# 6. Test Tuxedo Mask Fallback (Calling an unbound planetary ring)
+print "Calling distant cosmic guardian..."
+dispatch "PLUTO"
+
+print "Battle simulation concluded successfully."
+halt
