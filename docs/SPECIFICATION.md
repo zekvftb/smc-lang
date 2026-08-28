@@ -34,21 +34,22 @@ null_lit        = "null" ;
 literal         = number_lit | string_lit | template_lit | boolean_lit | null_lit ;
 ```
 
-### 1.2 Expression Grammar (Pratt Precedence Hierarchy)
+### 1.2 Expression Grammar (Uniform Postfix Pratt Hierarchy)
 ```ebnf
 primary_expr    = literal
                 | identifier
                 | list_literal
                 | dict_literal
-                | "(" , expression , ")"
-                | function_call ;
+                | "(" , expression , ")" ;
 
 list_literal    = "[" , [ expression , { "," , expression } ] , "]" ;
 dict_pair       = ( string_lit | identifier ) , ":" , expression ;
 dict_literal    = "{" , [ dict_pair , { "," , dict_pair } ] , "}" ;
-function_call   = identifier , "(" , [ expression , { "," , expression } ] , ")" ;
 
-postfix_expr    = primary_expr , { "[" , expression , "]" } ;
+call_suffix     = "(" , [ expression , { "," , expression } ] , ")" ;
+index_suffix    = "[" , expression , "]" ;
+postfix_expr    = primary_expr , { call_suffix | index_suffix } ;
+
 unary_expr      = [ "!" | "not" | "-" ] , postfix_expr ;
 mult_expr       = unary_expr , { ( "*" | "/" | "%" ) , unary_expr } ;
 add_expr        = mult_expr , { ( "+" | "-" ) , mult_expr } ;
@@ -120,18 +121,19 @@ expr_stmt       = expression ;
 
 ---
 
-## 2. Abstract Runtime Semantics & Environment
+## 2. Abstract Runtime Semantics & State Model
 
 ### 2.1 State Space & Storage Model
-An executing SMC environment consists of five distinct storage segments:
-1. **Activation Call Stack ($\mathcal{S}$):** A sequence of local frames $[\sigma_0, \sigma_1, \dots, \sigma_k]$, where $\sigma_k$ maps identifiers to value bindings.
-2. **Ephemeral Environment ($\mathcal{E}_{TTL}$):** A map from identifiers to pairs $(v, \tau)$, where $v$ is the bound value and $\tau \in \mathbb{Z}^+$ is the remaining time-to-live.
-3. **Global Environment ($\mathcal{G}$):** A persistent map from identifiers to global value bindings.
-4. **Content-Addressable Ring Registry ($\mathcal{R}$):** A map from categorical string keys to lists of executable statement blocks.
-5. **Execution Clock ($\tau_{clk}$):** A monotonically increasing discrete counter incremented on every evaluation step and incoming request.
+An executing SMC environment consists of six distinct state components:
+1. **Activation Call Stack ($\mathcal{S}$):** A stack of local activation frames $[\sigma_0, \sigma_1, \dots, \sigma_k]$, where $\sigma_k: \text{Identifier} \to \text{Value}$. Function scopes are isolated (no implicit outer local closure capture).
+2. **Ephemeral Environment ($\mathcal{E}_{TTL}$):** A map $\text{Identifier} \to (\text{Value}, \tau)$, where $\tau \in \mathbb{Z}^+$ is the discrete step time-to-live.
+3. **Global Environment ($\mathcal{G}$):** A persistent global symbol map $\text{Identifier} \to \text{Value}$.
+4. **Content-Addressable Ring Registry ($\mathcal{R}$):** A map from categorical string keys to lists of executable statement sequences.
+5. **Execution Phase State ($\Phi_{phase}$):** Current reading phase register $\Phi_{phase} \in \{0, 1, 2\}$, initialized to $0$ and modulated via `slip()`.
+6. **Execution Clock ($\tau_{clk}$):** Discrete monotonically increasing step counter incremented on every statement evaluation and request cycle.
 
 ### 2.2 Variable Resolution Hierarchy
-Lookup for identifier $x$ is defined formally as:
+Lookup for identifier $x$ is formally defined as:
 $$\text{resolve}(x) = \begin{cases} 
 \sigma_{top}(x) & \text{if } x \in \text{dom}(\sigma_{top}) \\
 v & \text{if } x \notin \text{dom}(\sigma_{top}) \land (x \mapsto (v, \tau)) \in \mathcal{E}_{TTL} \land \tau > 0 \\
@@ -139,136 +141,89 @@ v & \text{if } x \notin \text{dom}(\sigma_{top}) \land (x \mapsto (v, \tau)) \in
 0 & \text{otherwise (safe default fallback)}
 \end{cases}$$
 
-### 2.3 Undefined Read Semantics
-* **Deterministic Default:** Reading an uninitialized identifier evaluates to `0` in numeric context, `""` in string concatenation, and `null` / `false` in logical tests.
-* **Non-Halting Guarantee:** Uninitialized variable reads emit an internal runtime step log but **never** raise fatal exceptions or abort the process.
+### 2.3 Statements vs. Expressions & Expression Discarding
+* **Statement-Oriented Architecture:** SMC is an imperative statement-based language. Statement blocks `{ stmts }` do **not** evaluate to expression values.
+* **Expression Statements (`expr_stmt`):** Any valid expression (e.g. `fn_call()`, `x + 1`) may be executed as a standalone statement. In script execution mode, its return value is discarded; in interactive REPL mode, non-null values are formatted and emitted to stdout.
 
 ---
 
-## 3. Type System & Value Coercion Specification
+## 3. Explicit Operator Precedence Matrix
 
-| Type | Representation | Mutability | Truthiness Rule | Coercion with String (`+`) | Equality Semantics (`==`) |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **`number`** | 64-bit IEEE 754 float / int | Immutable (Value) | $x \neq 0$ | Formatted string (e.g. `"42"`) | Numeric value equality |
-| **`string`** | UTF-8 character string | Immutable (Value) | $\text{len}(s) > 0$ | Self | Byte-level string equality |
-| **`bool`** | `true`, `false` | Immutable (Value) | Direct identity | `"true"` / `"false"` | Boolean identity |
-| **`null`** | Absence of value | Immutable (Value) | **Always `false`** | **Coerces to `"null"`** | **`null == null` is `true`** |
-| **`list`** | Ordered dynamic array | **Mutable (Ref)** | $\text{len}(L) > 0$ | Formatted JSON-like string | Reference / structural equality |
-| **`dict`** | Associative hash map | **Mutable (Ref)** | $\text{len}(D) > 0$ | Formatted JSON-like string | Reference / structural equality |
+SMC enforces an 8-level Pratt parsing hierarchy. Subscript indexing (`[]`) and function calls (`()`) are uniform postfix operators with highest precedence.
 
-### 3.1 `null` Coercion & Membership Semantics
-* **String Concatenation:** `"Status: " + null` $\rightarrow$ `"Status: null"`.
-* **Logical Condition:** `if (null) { ... }` $\rightarrow$ Condition evaluates to `false`.
-* **Collection Membership:** `contains([1, null, 3], null)` $\rightarrow$ Evaluates to `true`.
-* **Type Identification:** `type(null)` $\rightarrow$ Returns string `"null"`.
+| Level | Operator | Operation | Associativity | Example Evaluation |
+| :---: | :--- | :--- | :---: | :--- |
+| **7 (Highest)** | `()` | Function Call | Left-to-right | `get_fn()(arg)` |
+| | `[]` | Index Access / Subscription | Left-to-right | `arr[0]`, `dict["key"]`, `get_list()[0]` |
+| **6** | `!`, `not` | Logical Negation | Right-to-left | `!is_valid` |
+| | `-` (unary) | Arithmetic Negation | Right-to-left | `-5` |
+| **5** | `*` | Multiplication | Left-to-right | `a * b` |
+| | `/` | Division (Zero-guarded) | Left-to-right | `a / b` |
+| | `%` | Modulo | Left-to-right | `a % b` |
+| **4** | `+` | Addition, String/List Concatenation | Left-to-right | `a + b` |
+| | `-` | Subtraction | Left-to-right | `a - b` |
+| **3** | `<` | Less Than | Left-to-right | `ball_y + 1 < y` $\rightarrow$ `(ball_y + 1) < y` |
+| | `<=` | Less Than or Equal | Left-to-right | `a <= b` |
+| | `>` | Greater Than | Left-to-right | `a > b` |
+| | `>=` | Greater Than or Equal | Left-to-right | `a >= b` |
+| **2** | `==` | Equality | Left-to-right | `x == 0` |
+| | `!=` | Inequality | Left-to-right | `x != 10` |
+| **1** | `&&`, `and` | Logical Conjunction (Short-circuiting) | Left-to-right | `a > 0 && b < 10` |
+| **0 (Lowest)** | `\|\|`, `or` | Logical Disjunction (Short-circuiting) | Left-to-right | `x == 0 \|\| x == width - 1` |
+
+*(Note: In SMC v0.7.0, all object and associative container access is performed via index subscription `obj["field"]`. The dot `.` token is reserved for future grammar versions).*
 
 ---
 
-## 4. Subsystem & Keyword Semantics
+## 4. Type System & Coercion Specification
 
-### 4.1 Ephemeral Memory Decay (`acme`)
-* **Syntax:** `acme(ttl = k) ident = expr`
-* **Allocation:** Inserts $(ident \mapsto (\text{eval}(expr), k))$ into $\mathcal{E}_{TTL}$.
-* **Decay Lifecycle:** At each execution step ($\tau_{clk} \leftarrow \tau_{clk} + 1$), for all $(x \mapsto (v, \tau)) \in \mathcal{E}_{TTL}$:
-  $$\tau \leftarrow \tau - 1$$
-  $$\text{if } \tau \le 0 \implies \mathcal{E}_{TTL} \leftarrow \mathcal{E}_{TTL} \setminus \{x\}$$
+| Type | Mutability | Truthiness Rule | String Concatenation (`+`) | Equality (`==`) |
+| :--- | :--- | :--- | :--- | :--- |
+| **`number`** | Value (Immutable) | $x \neq 0$ | Formats number to string | Numeric equality |
+| **`string`** | Value (Immutable) | $\text{len}(s) > 0$ | Direct concatenation | Byte string equality |
+| **`bool`** | Value (Immutable) | `true` / `false` | `"true"` / `"false"` | Boolean identity |
+| **`null`** | Value (Immutable) | **Always `false`** | **Coerces to `"null"`** | **`null == null` is `true`** |
+| **`list`** | **Reference (Mutable)** | $\text{len}(L) > 0$ | Formats JSON array string | Reference equality |
+| **`dict`** | **Reference (Mutable)** | $\text{len}(D) > 0$ | Formats JSON object string | Reference equality |
 
-### 4.2 Stochastic Fault-Injection (`mutate`)
-* **Syntax:** `mutate { stmts }`
-* **Semantics:** Executes nested statements within a supervised fault-injection sandbox. At each step within the block, the runtime introduces a stochastic perturbation (simulated bit-flip, random operator substitution, or argument jitter) governed by the active mutation rate. The runtime's codon wobble engine and watchdog layers dynamically absorb these errors, and execution steps survived are tracked in telemetry.
+### 4.1 Collection & Index Assignment Semantics
+* **Dictionary Index Assignment (`dict[key] = val` / `dict[key] += val`):** If `key` is absent, it is automatically created and assigned. In compound assignments (`+=`, `-=`), absent keys initialize from default value `0`.
+* **List Index Assignment (`arr[idx] = val`):**
+  * If $0 \le \text{idx} < \text{len}(arr)$: Mutates element in place.
+  * If $\text{idx} < 0$: Resolves from end of array ($\text{idx} \leftarrow \text{len}(arr) + \text{idx}$).
+  * If $\text{idx} \ge \text{len}(arr)$: Out-of-bounds assignments are safely caught and ignored without process termination.
 
-### 4.3 HexaPhase 6-Channel Multiplexing (`hexaphase`)
+---
+
+## 5. Subsystem Semantics & Environmental Lifecycles
+
+### 5.1 HexaPhase Multiplexing (`hexaphase`)
 * **Syntax:** `hexaphase expr { stmts }`
-* **Semantics:** Evaluates `expr` as string $S$ of length $N$. Binds variable `hexaphase_channels` to dictionary:
-  $$\begin{aligned}
-  \text{"+0"} &= \left( S_i \mid i \equiv 0 \pmod 3 \right), & \text{"-0"} &= \left( \text{rev}(S)_i \mid i \equiv 0 \pmod 3 \right) \\
-  \text{"+1"} &= \left( S_i \mid i \equiv 1 \pmod 3 \right), & \text{"-1"} &= \left( \text{rev}(S)_i \mid i \equiv 1 \pmod 3 \right) \\
-  \text{"+2"} &= \left( S_i \mid i \equiv 2 \pmod 3 \right), & \text{"-2"} &= \left( \text{rev}(S)_i \mid i \equiv 2 \pmod 3 \right)
-  \end{aligned}$$
+* **Lifecycle & Scope:** Evaluates `expr` into 6 channels (`"+0", "+1", "+2", "-0", "-1", "-2"`). Binds dictionary `hexaphase_channels` into the runtime environment. The binding remains active throughout the block and persists until overwritten by a subsequent `hexaphase` block. Nested blocks overwrite the binding in-place.
 
-### 4.4 Programmed Ribosomal Frameshifting (`slip`)
-* **Syntax:** `slip(offset)`
-* **Semantics:** Computes phase transition: $\text{phase} \leftarrow (\text{phase} + \text{int}(\text{eval}(offset))) \pmod 3$. Updates global binding `current_phase`.
+### 5.2 Programmed Ribosomal Frameshifting (`slip`)
+* **Syntax:** `slip(offset_expr)`
+* **Semantics:** Updates the execution phase register:
+  $$\Phi_{phase} \leftarrow (\Phi_{phase} + \text{int}(\text{eval}(offset\_expr))) \pmod 3$$
+  Reflects the new integer value into global binding `current_phase`.
 
-### 4.5 Attenuator Pause Gate (`attenuator`)
-* **Syntax:** `attenuator(threshold = expr) { stmts }`
-* **Semantics:** Evaluates numeric resistance barrier and throttles throughput of statements within the block.
+### 5.3 Stochastic Fault-Injection Block (`mutate`) [Experimental]
+* **Syntax:** `mutate { stmts }`
+* **Semantics:** Executes statements within a supervised fault-injection sandbox. At each step, a stochastic mutation engine perturbs AST dispatch or argument values with a default error rate of $\rho = 0.05$ (5%). PRNG seeds can be deterministically set via `py_call("random.seed", seed)`.
 
----
+### 5.4 Python FFI & Security Policy
+* **Syntax:** `py_call("target", *args)`, `py_eval("expr")`, `py_import "mod" as alias`
+* **Security Model:** Designed for **trusted local execution** (scientific pipelines, local toolchains). The FFI inherits standard host process OS permissions (unrestricted disk and network access under the running user's account).
 
-## 5. Python FFI & Security Sandbox Specification
-
-### 5.1 FFI Operations
-* `py_import(mod_name, alias)`: Loads host Python module into active runtime bridge.
-* `py_call(target_str, *args)`: Dynamically resolves callable (e.g. `"math.sqrt"`, `"random.randint"`, `"secrets.token_hex"`), marshals arguments from SMC types to CPython types, invokes callable synchronously, and marshals return values back to SMC types.
-* `py_eval(expr_str)`: Evaluates Python expressions synchronously within a whitelisted sandbox.
-
-### 5.2 Sandbox Scope & Security Boundaries
-`py_eval` executes with standard builtins restricted and an explicit module scope containing:
-$$\mathcal{S}_{sandbox} = \{ \text{math}, \text{random}, \text{datetime}, \text{json}, \text{time}, \text{os}, \text{sys} \} \cup \mathcal{M}_{imported} \cup \mathcal{G}$$
-* **Network & Disk Access:** Modules requiring host system I/O inherit standard user-level permissions of the host process.
-* **Marshalling Safety:** Circular Python references are intercepted and serialized safely without stack recursion errors.
-
----
-
-## 6. HTTP Web Server Subsystem (`serve_http`)
-
-### 6.1 Server Invocation & Lifecycle
+### 5.5 Embedded HTTP Web Server (`serve_http`)
 * **Syntax:** `serve_http(port: int, handler_fn: str)`
-* **Protocol:** Multi-threaded HTTP/1.1 daemon listening on `0.0.0.0:port`.
-* **Execution:** Synchronously receives HTTP requests, increments `execution_steps`, ticks active TTL memory, and invokes `handler_fn(req)`.
-
-### 6.2 Request Object Schema (`req: dict`)
-The runtime passes a structured dictionary to `handler_fn`:
-```json
-{
-  "path": "/api/resource",
-  "method": "GET",
-  "headers": {
-    "host": "localhost:3000",
-    "user-agent": "Mozilla/5.0 ...",
-    "content-type": "application/json"
-  },
-  "body": "{\"param\": 123}"
-}
-```
-
-### 6.3 Response Object Schema & Fallbacks
-The handler must return a response structure:
-* **Dictionary Response:**
+* **Request Structure (`req: dict`):**
   ```json
   {
-    "status": 200,
-    "content_type": "text/html; charset=utf-8",
-    "body": "<h1>Response Payload</h1>"
+    "path": "/api/v1/resource",
+    "method": "GET",
+    "headers": { "host": "127.0.0.1:3000", "content-type": "application/json" },
+    "body": "..."
   }
   ```
-* **String Response:** If `handler_fn` returns a raw string, the server automatically wraps it as `HTTP 200 OK` with `Content-Type: text/html; charset=utf-8`.
-* **Malformed Output Fallback:** If `handler_fn` returns an invalid type, the server safely coerces it via `str()` with `HTTP 200 OK`.
-
----
-
-## 7. Standard Built-in Function Reference
-
-| Function | Signature | Return Type | Semantics & Error Fallback |
-| :--- | :--- | :--- | :--- |
-| `len` | `len(target)` | `int` | Element count or string length. Returns `0` if non-collection. |
-| `push` | `push(list, item)` | `list` | Appends `item` in place; returns list. Returns `[]` if target is non-list. |
-| `pop` | `pop(list)` | `any` | Removes and returns last element. Returns `0` if list is empty. |
-| `str` | `str(val)` | `str` | Converts value to string representation. |
-| `int` | `int(val)` | `int` | Parses integer. Returns `0` on parse failure. |
-| `type` | `type(val)` | `str` | Returns `"list"`, `"dict"`, `"bool"`, `"number"`, `"str"`, or `"null"`. |
-| `read_file` | `read_file(path: str)` | `str` | Reads UTF-8 file. Returns `""` on I/O failure. |
-| `write_file` | `write_file(path: str, data: str)` | `bool` | Writes UTF-8 text to disk. Returns `true` on success, `false` on failure. |
-| `serve_file` | `serve_file(path: str, mime: str)` | `dict` | Returns HTTP response structure `{"status": 200, "content_type": mime, "body": content}`. |
-| `to_json` | `to_json(val)` | `str` | Formats data as JSON string. Returns `"{}"` on failure. |
-| `from_json` | `from_json(str)` | `any` | Parses JSON string into dictionary/list. Returns `{}` on failure. |
-| `range` | `range(start, end[, step])` | `list` | Generates list of integers. Returns `[]` on invalid arguments. |
-| `split` | `split(str, sep)` | `list` | Splits string by delimiter substring. |
-| `join` | `join(list, sep)` | `str` | Joins list elements with separator string. |
-| `keys` | `keys(dict)` | `list` | Returns list of dictionary keys. |
-| `values` | `values(dict)` | `list` | Returns list of dictionary values. |
-| `contains` | `contains(container, item)` | `bool` | Returns `true` if item is found in list, string, or dict keys. |
-| `hexaphase_compile`| `hexaphase_compile(s1, s2)`| `str` | Interleaves two strings into multiplexed string. Returns `""` on missing args. |
-| `hexaphase_channels`| `hexaphase_channels(s)`| `dict` | Slices string into 6-channel dictionary (`+0..-2`). |
-| `phase_slip` | `phase_slip(s, offset)` | `str` | Rotates string by index offset. |
+* **Response Structure:** Expects `{"status": int, "content_type": str, "body": str}`. Raw strings are automatically wrapped with `HTTP 200 OK text/html; charset=utf-8`.
