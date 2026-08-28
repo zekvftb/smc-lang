@@ -13,9 +13,11 @@
 ```ebnf
 whitespace      = " " | "\t" | "\r" | "\n" ;
 comment         = "#" , { ? any character except newline ? } , ( "\n" | ? EOF ? ) ;
-letter          = "A" | ... | "Z" | "a" | ... | "z" | "_" ;
+letter          = "A" | ... | "Z" | "a" | ... | "z" ;
 digit           = "0" | ... | "9" ;
-identifier      = letter , { letter | digit } ;
+ident_start     = letter | "_" ;
+ident_char      = letter | digit | "_" ;
+identifier      = ident_start , { ident_char } ;
 
 integer_lit     = digit , { digit } ;
 float_lit       = digit , { digit } , "." , digit , { digit } ;
