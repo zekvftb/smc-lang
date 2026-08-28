@@ -24,6 +24,8 @@ class TokenType(str, Enum):
     RBRACE = "RBRACE"        # }
     LPAREN = "LPAREN"        # (
     RPAREN = "RPAREN"        # )
+    LBRACKET = "LBRACKET"    # [
+    RBRACKET = "RBRACKET"    # ]
     EQUALS = "EQUALS"        # =
     COMMA = "COMMA"          # ,
 
@@ -51,6 +53,8 @@ class Opcode(str, Enum):
     IF = "IF"
     ELSE = "ELSE"
     WHILE = "WHILE"
+    FN = "FN"
+    RETURN = "RETURN"
     SUMMON = "SUMMON"
     CALL_RING = "CALL_RING"
     TRANSFORM = "TRANSFORM"
@@ -81,6 +85,12 @@ OPCODE_SYNONYMS: dict[Opcode, list[str]] = {
     Opcode.WHILE: [
         "WHILE", "LOOP", "CYCLE", "ROAD_RUNNER_LOOP"
     ],
+    Opcode.FN: [
+        "FN", "FUNCTION", "DEF", "SUBROUTINE", "RECIPE", "TECHNIQUE"
+    ],
+    Opcode.RETURN: [
+        "RETURN", "YIELD", "GIVE", "PAYLOAD"
+    ],
     Opcode.SUMMON: [
         "BIND", "SUMMON", "SUMMON_PLANETEER", "PLANET_POWER", "CAPTAIN_PLANET", "RING_BIND"
     ],
@@ -100,7 +110,7 @@ OPCODE_SYNONYMS: dict[Opcode, list[str]] = {
         "MUTATE", "DEE_DEE_MUTATION", "DEE_DEE_BUTTON", "OOPS_MUTATION", "RADIOACTIVE_SPIDER"
     ],
     Opcode.HALT: [
-        "HALT", "EXIT", "RETURN", "THATS_ALL_FOLKS", "COWABUNGA", "FIN"
+        "HALT", "EXIT", "THATS_ALL_FOLKS", "COWABUNGA", "FIN"
     ],
 }
 

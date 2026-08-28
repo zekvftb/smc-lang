@@ -31,17 +31,23 @@ It translates the fundamental computational principles of **DNA and RNA** into m
 pip install -e D:\smc_lang\
 ```
 
-### 2. Running an SMC Script
+### 2. Launching the Live Interactive REPL
 ```powershell
-python -m smc.cli run D:\smc_lang\examples\sailor_moon_battle.smc
+smc
+# or: python -m smc.cli repl
 ```
 
-### 3. Running CatDog Dual-Frame Overlapping Code
+### 3. Running an SMC Script
+```powershell
+python -m smc.cli run D:\smc_lang\examples\advanced_functions.smc
+```
+
+### 4. Running CatDog Dual-Frame Overlapping Code
 ```powershell
 python -m smc.cli catdog D:\smc_lang\examples\catdog_dual_frame.smc
 ```
 
-### 4. Inspecting Repaired Mutations & Tokens
+### 5. Inspecting Repaired Mutations & Tokens
 ```powershell
 python -m smc.cli tokens D:\smc_lang\examples\sailor_moon_battle.smc
 ```
@@ -94,4 +100,4 @@ Run the comprehensive test suite:
 ```powershell
 python -m pytest D:\smc_lang\tests/
 ```
-**All 11 tests pass in 0.08 seconds!**
+**All 15 tests pass in 0.12 seconds!**

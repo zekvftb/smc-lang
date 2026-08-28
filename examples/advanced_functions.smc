@@ -1,0 +1,44 @@
+# =============================================================
+# SMC SAMPLE: Functions, Arguments, and First-Class Lists
+# =============================================================
+# Demonstrates Python-parity features:
+# - User-defined functions with parameters and return values
+# - Local stack frame isolation
+# - First-class lists/arrays and indexed access
+# - Acme TTL memory inside function scope
+
+experiment "Advanced_Subroutines_And_Arrays"
+
+# 1. Define reusable parameterized function
+fn calculate_boost(base_power, multiplier) {
+    # Acme ephemeral calculation scratchpad (auto-drops after 2 steps)
+    acme(ttl=2) temp_boost = 15
+    let total = (base_power * multiplier) + temp_boost
+    return total
+}
+
+# 2. First-class Lists / Arrays
+let team = ["Blossom", "Bubbles", "Buttercup"]
+let power_levels = [100, 150, 200]
+
+print "Team Captain: "
+print team[0]
+
+print "Base Power: "
+print power_levels[0]
+
+# 3. Call function with arguments
+let boosted = calculate_boost(power_levels[0], 2)
+print "Boosted Power (with Acme boost): "
+print boosted
+
+# 4. Iterate over list with while loop
+let idx = 0
+while (idx < 3) {
+    print "Roster Member: "
+    print team[idx]
+    let idx = idx + 1
+}
+
+print "Function and list demo completed cleanly."
+halt

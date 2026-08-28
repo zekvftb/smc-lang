@@ -1,7 +1,7 @@
 """SMC Abstract Syntax Tree (AST) & Recursive-Descent Expression Parser.
 
 Supports arithmetic expressions, logical comparisons, if/else branching, while loops,
-Sailor Moon transformations, and CatDog multi-framing.
+user-defined functions with parameters & return values, first-class lists, and CatDog multi-framing.
 """
 
 from __future__ import annotations
@@ -29,6 +29,23 @@ class LiteralNode(AstNode):
 @dataclass
 class VariableNode(AstNode):
     name: str
+
+
+@dataclass
+class ListNode(AstNode):
+    elements: list[AstNode] = field(default_factory=list)
+
+
+@dataclass
+class IndexAccessNode(AstNode):
+    target: AstNode
+    index_expr: AstNode
+
+
+@dataclass
+class FunctionCallNode(AstNode):
+    name: str
+    args: list[AstNode] = field(default_factory=list)
 
 
 @dataclass
@@ -78,6 +95,18 @@ class WhileNode(AstNode):
 
 
 @dataclass
+class FunctionDefNode(AstNode):
+    name: str
+    params: list[str] = field(default_factory=list)
+    body: list[AstNode] = field(default_factory=list)
+
+
+@dataclass
+class ReturnNode(AstNode):
+    expr: AstNode
+
+
+@dataclass
 class SummonNode(AstNode):
     ring: str
     body: list[AstNode] = field(default_factory=list)
@@ -102,6 +131,11 @@ class FallbackNode(AstNode):
 
 @dataclass
 class PrintNode(AstNode):
+    expr: AstNode
+
+
+@dataclass
+class ExpressionStatementNode(AstNode):
     expr: AstNode
 
 
@@ -193,10 +227,55 @@ class SmcParser:
             self._advance()
             return LiteralNode(value=tok.value)
 
-        # Identifiers (or variable names)
+        # First-class Lists: [expr, expr, ...]
+        if tok.token_type == TokenType.LBRACKET:
+            self._advance()
+            elements: list[AstNode] = []
+            while self._peek().token_type not in (TokenType.RBRACKET, TokenType.EOF):
+                elements.append(self.parse_expression())
+                if self._peek().token_type == TokenType.COMMA:
+                    self._advance()
+            if self._peek().token_type == TokenType.RBRACKET:
+                self._advance()
+            
+            expr: AstNode = ListNode(elements=elements)
+            # Check for chained index access: [1, 2][0]
+            while self._peek().token_type == TokenType.LBRACKET:
+                self._advance()
+                idx_expr = self.parse_expression()
+                if self._peek().token_type == TokenType.RBRACKET:
+                    self._advance()
+                expr = IndexAccessNode(target=expr, index_expr=idx_expr)
+            return expr
+
+        # Identifiers (variable name OR function call OR indexed access)
         if tok.token_type == TokenType.IDENTIFIER:
             self._advance()
-            return VariableNode(name=str(tok.value))
+            name = str(tok.value)
+
+            # Check if function call: name(arg1, arg2)
+            if self._peek().token_type == TokenType.LPAREN:
+                self._advance()
+                args: list[AstNode] = []
+                while self._peek().token_type not in (TokenType.RPAREN, TokenType.EOF):
+                    args.append(self.parse_expression())
+                    if self._peek().token_type == TokenType.COMMA:
+                        self._advance()
+                if self._peek().token_type == TokenType.RPAREN:
+                    self._advance()
+                expr = FunctionCallNode(name=name, args=args)
+            else:
+                expr = VariableNode(name=name)
+
+            # Check if indexed access: var[0]
+            while self._peek().token_type == TokenType.LBRACKET:
+                self._advance()
+                idx_expr = self.parse_expression()
+                if self._peek().token_type == TokenType.RBRACKET:
+                    self._advance()
+                expr = IndexAccessNode(target=expr, index_expr=idx_expr)
+
+            return expr
 
         # Parenthesized expression
         if tok.token_type == TokenType.LPAREN:
@@ -308,7 +387,38 @@ class SmcParser:
                     self._advance()
             return WhileNode(condition=cond, body=body_stmts)
 
-        # 5. SUMMON: bind(ring="...") { ... }
+        # 5. FUNCTION DEFINITION: fn name(p1, p2) { ... }
+        if self._match_opcode(Opcode.FN):
+            self._advance()
+            fn_name = str(self._advance().value)
+            params: list[str] = []
+            if self._peek().token_type == TokenType.LPAREN:
+                self._advance()
+                while self._peek().token_type not in (TokenType.RPAREN, TokenType.EOF):
+                    params.append(str(self._advance().value))
+                    if self._peek().token_type == TokenType.COMMA:
+                        self._advance()
+                if self._peek().token_type == TokenType.RPAREN:
+                    self._advance()
+
+            body_stmts = []
+            if self._peek().token_type == TokenType.LBRACE:
+                self._advance()
+                while self.pos < len(self.tokens) and self._peek().token_type != TokenType.RBRACE:
+                    s = self._parse_statement()
+                    if s:
+                        body_stmts.append(s)
+                if self._peek().token_type == TokenType.RBRACE:
+                    self._advance()
+            return FunctionDefNode(name=fn_name, params=params, body=body_stmts)
+
+        # 6. RETURN: return <expr>
+        if self._match_opcode(Opcode.RETURN):
+            self._advance()
+            expr = self.parse_expression()
+            return ReturnNode(expr=expr)
+
+        # 7. SUMMON: bind(ring="...") { ... }
         if self._match_opcode(Opcode.SUMMON):
             self._advance()
             ring_name = "HEART"
@@ -336,7 +446,7 @@ class SmcParser:
                     self._advance()
             return SummonNode(ring=ring_name, body=body_stmts)
 
-        # 6. CALL_RING: dispatch "..."
+        # 8. CALL_RING: dispatch "..."
         if self._match_opcode(Opcode.CALL_RING):
             self._advance()
             ring_name = "HEART"
@@ -344,7 +454,7 @@ class SmcParser:
                 ring_name = str(self._advance().value).upper()
             return CallRingNode(ring=ring_name)
 
-        # 7. TRANSFORM: MOON_PRISM_POWER / transform x = <expr> { ... }
+        # 9. TRANSFORM: transform x = <expr> { ... }
         if self._match_opcode(Opcode.TRANSFORM):
             self._advance()
             ident = str(self._advance().value)
@@ -362,7 +472,7 @@ class SmcParser:
                     self._advance()
             return TransformNode(target_var=ident, expr=expr, body=body_stmts)
 
-        # 8. FALLBACK: TUXEDO_MASK / fallback { ... }
+        # 10. FALLBACK: fallback { ... }
         if self._match_opcode(Opcode.FALLBACK):
             self._advance()
             body_stmts = []
@@ -376,13 +486,18 @@ class SmcParser:
                     self._advance()
             return FallbackNode(body=body_stmts)
 
-        # 9. PRINT: print <expr>
+        # 11. PRINT: print <expr>
         if self._match_opcode(Opcode.PRINT):
             self._advance()
             expr = self.parse_expression()
             return PrintNode(expr=expr)
 
-        # 10. MUTATE BLOCK
+        # 12. Standalone Function Call or Expression: my_func(a, b)
+        if tok.token_type == TokenType.IDENTIFIER and self._peek(1).token_type == TokenType.LPAREN:
+            expr = self.parse_expression()
+            return ExpressionStatementNode(expr=expr)
+
+        # 13. MUTATE BLOCK
         if self._match_opcode(Opcode.MUTATE):
             self._advance()
             body_stmts = []
@@ -396,7 +511,7 @@ class SmcParser:
                     self._advance()
             return MutateBlockNode(body=body_stmts)
 
-        # 11. HALT
+        # 14. HALT
         if self._match_opcode(Opcode.HALT):
             self._advance()
             return HaltNode()

@@ -1,7 +1,8 @@
 """Dexter Virtual Machine (DexterVM) for the SMC Language.
 
 Features:
-- Arithmetic expressions and logical comparisons evaluation.
+- Arithmetic expressions, logical comparisons, and first-class lists.
+- User-defined functions with parameters, local scoping, and return values.
 - Control flow: if/else conditionals and while loops.
 - Acme-Anvil Time-To-Live (TTL) ephemeral memory.
 - Captain Planet content-addressable function dispatch.
@@ -19,13 +20,19 @@ from smc.parser import (
     AstNode,
     BinaryOpNode,
     CallRingNode,
+    ExpressionStatementNode,
     FallbackNode,
+    FunctionCallNode,
+    FunctionDefNode,
     HaltNode,
     IfNode,
+    IndexAccessNode,
+    ListNode,
     LiteralNode,
     MutateBlockNode,
     PrintNode,
     ProgramNode,
+    ReturnNode,
     SetVarNode,
     SummonNode,
     TransformNode,
@@ -51,6 +58,10 @@ class DexterVM:
         self.variables: dict[str, Any] = {}
         self.ttl_memory: dict[str, TtlItem] = {}
         self.planeteer_rings: dict[str, list[AstNode]] = {}
+        self.functions: dict[str, FunctionDefNode] = {}
+        self.call_stack: list[dict[str, Any]] = []
+        self.return_triggered: bool = False
+        self.last_return_value: Any = None
         self.fallback_handler: list[AstNode] | None = None
         self.stdout: list[str] = []
         self.execution_steps: int = 0
@@ -73,12 +84,21 @@ class DexterVM:
             self.stdout.append(f"[ACME_ANVIL] *ANVIL DROPPED* on '{name}'! Ephemeral variable dissolved.")
 
     def get_var(self, name: str) -> Any:
-        """Resolve a variable from persistent memory or active Acme TTL memory."""
+        """Resolve a variable from local call stack frame, active Acme TTL memory, or globals."""
+        if self.call_stack and name in self.call_stack[-1]:
+            return self.call_stack[-1][name]
         if name in self.ttl_memory:
             return self.ttl_memory[name].value
         if name in self.variables:
             return self.variables[name]
         return 0
+
+    def set_var(self, name: str, value: Any) -> None:
+        """Set variable in current local frame if within a function, else in global variables."""
+        if self.call_stack:
+            self.call_stack[-1][name] = value
+        else:
+            self.variables[name] = value
 
     # -----------------------------------------------------------------------
     # Expression Evaluation
@@ -91,6 +111,20 @@ class DexterVM:
 
         if isinstance(node, VariableNode):
             return self.get_var(node.name)
+
+        if isinstance(node, ListNode):
+            return [self.evaluate_expression(elem) for elem in node.elements]
+
+        if isinstance(node, IndexAccessNode):
+            target = self.evaluate_expression(node.target)
+            idx = self.evaluate_expression(node.index_expr)
+            try:
+                return target[int(idx)]
+            except (IndexError, TypeError, KeyError):
+                return 0
+
+        if isinstance(node, FunctionCallNode):
+            return self._call_function(node.name, [self.evaluate_expression(arg) for arg in node.args])
 
         if isinstance(node, UnaryOpNode):
             val = self.evaluate_expression(node.operand)
@@ -109,6 +143,8 @@ class DexterVM:
             if op == "+":
                 if isinstance(left, str) or isinstance(right, str):
                     return str(left) + str(right)
+                if isinstance(left, list) and isinstance(right, list):
+                    return left + right
                 return left + right
             if op == "-":
                 return left - right
@@ -135,13 +171,38 @@ class DexterVM:
 
         return 0
 
+    def _call_function(self, name: str, arg_values: list[Any]) -> Any:
+        """Execute a user-defined function in an isolated local stack frame."""
+        if name not in self.functions:
+            self.stdout.append(f"[ERROR] Undefined function '{name}' called.")
+            return 0
+
+        fn_def = self.functions[name]
+        local_frame: dict[str, Any] = {}
+        for param, val in zip(fn_def.params, arg_values):
+            local_frame[param] = val
+
+        self.call_stack.append(local_frame)
+        self.return_triggered = False
+        self.last_return_value = 0
+
+        for stmt in fn_def.body:
+            if self.halted or self.return_triggered:
+                break
+            self.execute_node(stmt)
+
+        ret_val = self.last_return_value
+        self.return_triggered = False
+        self.call_stack.pop()
+        return ret_val
+
     # -----------------------------------------------------------------------
     # Node Execution
     # -----------------------------------------------------------------------
 
     def execute_node(self, node: AstNode) -> None:
         """Execute a single AST node."""
-        if self.halted:
+        if self.halted or self.return_triggered:
             return
 
         self.execution_steps += 1
@@ -150,7 +211,7 @@ class DexterVM:
         # 1. SET_VAR: let x = <expr>
         if isinstance(node, SetVarNode):
             val = self.evaluate_expression(node.expr)
-            self.variables[node.name] = val
+            self.set_var(node.name, val)
 
         # 2. TTL_BOX: acme(ttl=N) x = <expr>
         elif isinstance(node, TtlBoxNode):
@@ -162,12 +223,12 @@ class DexterVM:
             cond_val = self.evaluate_expression(node.condition)
             if bool(cond_val):
                 for stmt in node.then_branch:
-                    if self.halted:
+                    if self.halted or self.return_triggered:
                         break
                     self.execute_node(stmt)
             else:
                 for stmt in node.else_branch:
-                    if self.halted:
+                    if self.halted or self.return_triggered:
                         break
                     self.execute_node(stmt)
 
@@ -175,24 +236,37 @@ class DexterVM:
         elif isinstance(node, WhileNode):
             loop_limit = 5000
             count = 0
-            while bool(self.evaluate_expression(node.condition)) and count < loop_limit and not self.halted:
+            while bool(self.evaluate_expression(node.condition)) and count < loop_limit and not self.halted and not self.return_triggered:
                 count += 1
                 for stmt in node.body:
-                    if self.halted:
+                    if self.halted or self.return_triggered:
                         break
                     self.execute_node(stmt)
 
-        # 5. SUMMON_PLANETEER (Register content-addressable function ring)
+        # 5. FUNCTION DEFINITION
+        elif isinstance(node, FunctionDefNode):
+            self.functions[node.name] = node
+
+        # 6. RETURN
+        elif isinstance(node, ReturnNode):
+            self.last_return_value = self.evaluate_expression(node.expr)
+            self.return_triggered = True
+
+        # 7. EXPRESSION STATEMENT (e.g. standalone func call)
+        elif isinstance(node, ExpressionStatementNode):
+            self.evaluate_expression(node.expr)
+
+        # 8. SUMMON_PLANETEER (Register content-addressable function ring)
         elif isinstance(node, SummonNode):
             self.planeteer_rings[node.ring.upper()] = node.body
 
-        # 6. CALL_RING (Dispatch by Planeteer Ring name)
+        # 9. CALL_RING (Dispatch by Planeteer Ring name)
         elif isinstance(node, CallRingNode):
             ring = node.ring.upper()
             if ring in self.planeteer_rings:
                 self.stdout.append(f"[CAPTAIN_PLANET] (Ring: {ring}) Powers combined! Function activated.")
                 for stmt in self.planeteer_rings[ring]:
-                    if self.halted:
+                    if self.halted or self.return_triggered:
                         break
                     self.execute_node(stmt)
             else:
@@ -200,41 +274,41 @@ class DexterVM:
                 if self.fallback_handler:
                     self.stdout.append(f"[TUXEDO_MASK] (Watchdog Fallback) Unbound ring '{ring}' intercepted! 'My work here is done.'")
                     for stmt in self.fallback_handler:
-                        if self.halted:
+                        if self.halted or self.return_triggered:
                             break
                         self.execute_node(stmt)
                 else:
                     self.stdout.append(f"[CAPTAIN_PLANET] [WARNING] No matching ring '{ring}' bound in cell.")
 
-        # 7. TRANSFORM (Sailor Moon MOON_PRISM_POWER)
+        # 10. TRANSFORM (Sailor Moon MOON_PRISM_POWER)
         elif isinstance(node, TransformNode):
             val = self.evaluate_expression(node.expr)
-            self.variables[node.target_var] = val
+            self.set_var(node.target_var, val)
             self.stdout.append(f"[MOON_PRISM_POWER] (Sailor Moon Transformation) '{node.target_var}' evolved to '{val}'!")
             for stmt in node.body:
-                if self.halted:
+                if self.halted or self.return_triggered:
                     break
                 self.execute_node(stmt)
 
-        # 8. FALLBACK (Tuxedo Mask registration)
+        # 11. FALLBACK (Tuxedo Mask registration)
         elif isinstance(node, FallbackNode):
             self.fallback_handler = node.body
 
-        # 9. PRINT
+        # 12. PRINT
         elif isinstance(node, PrintNode):
             val = self.evaluate_expression(node.expr)
             self.stdout.append(str(val))
 
-        # 10. MUTATE BLOCK ("Dee Dee Mutation")
+        # 13. MUTATE BLOCK ("Dee Dee Mutation")
         elif isinstance(node, MutateBlockNode):
             self.stdout.append("[DEE_DEE] (Mutation Event) 'Oooooh, what does THIS button do?!'")
             self.mutations_survived += 1
             for stmt in node.body:
-                if self.halted:
+                if self.halted or self.return_triggered:
                     break
                 self.execute_node(stmt)
 
-        # 11. HALT
+        # 14. HALT
         elif isinstance(node, HaltNode):
             self.halted = True
             self.stdout.append("[THATS_ALL_FOLKS] [HALT] Program reached clean termination.")

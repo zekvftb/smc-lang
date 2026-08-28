@@ -1,6 +1,8 @@
 """Command-Line Interface for SMC (Saturday Morning Cartoons) Language.
 
 Usage:
+  smc                      # Launch the interactive live REPL shell
+  smc repl                 # Launch the interactive live REPL shell
   smc run <file.smc>       # Execute script in DexterVM
   smc catdog <file.smc>    # Execute CatDog dual-frame interleaved routines
   smc tokens <file.smc>    # Inspect token stream and degenerate opcode mappings
@@ -14,6 +16,7 @@ import sys
 
 from smc.lexer import SmcLexer
 from smc.parser import CatDogSlicer, SmcParser
+from smc.repl import start_repl
 from smc.vm import DexterVM
 
 
@@ -87,11 +90,19 @@ def print_tokens(file_path: Path | str) -> None:
 
 
 def main() -> None:
+    # If invoked with no arguments, launch REPL directly
+    if len(sys.argv) == 1:
+        start_repl()
+        return
+
     parser = argparse.ArgumentParser(
         description="SMC (Saturday Morning Cartoons) Language CLI",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
+
+    # repl command
+    subparsers.add_parser("repl", help="Launch interactive live REPL shell")
 
     # run command
     run_parser = subparsers.add_parser("run", help="Execute an SMC script")
@@ -107,7 +118,9 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    if args.command == "run":
+    if args.command == "repl":
+        start_repl()
+    elif args.command == "run":
         run_file(args.file)
     elif args.command == "catdog":
         run_catdog(args.file)

@@ -90,6 +90,12 @@ class SmcLexer:
             elif ch == ")":
                 self._advance()
                 tokens.append(CanonicalToken(TokenType.RPAREN, ")", start_line, start_col))
+            elif ch == "[":
+                self._advance()
+                tokens.append(CanonicalToken(TokenType.LBRACKET, "[", start_line, start_col))
+            elif ch == "]":
+                self._advance()
+                tokens.append(CanonicalToken(TokenType.RBRACKET, "]", start_line, start_col))
             elif ch == "{":
                 self._advance()
                 tokens.append(CanonicalToken(TokenType.LBRACE, "{", start_line, start_col))

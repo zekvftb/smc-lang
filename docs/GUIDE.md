@@ -137,6 +137,62 @@ while (counter < 5) {
 }
 ```
 
+### User Functions (`fn` & `return`)
+Declare reusable subroutines with arguments and isolated local variable scopes:
+```smc
+fn calculate_power(base, multiplier) {
+    let boosted = (base * multiplier) + 10
+    return boosted
+}
+
+let result = calculate_power(20, 3)   # 70
+print result
+```
+
+### First-Class Lists / Arrays
+Store ordered collections and access items by 0-based index:
+```smc
+let team = ["Blossom", "Bubbles", "Buttercup"]
+let scores = [100, 250, (50 * 8)]
+
+print team[0]       # "Blossom"
+print scores[2]     # 400
+```
+
+---
+
+## 6. The Interactive Live Lab Shell (REPL)
+
+Instead of running files, you can experiment in a live, interactive DexterVM shell:
+
+```powershell
+smc
+# or: python -m smc.cli repl
+```
+
+```text
+=================================================================
+  DEXTER_VM v0.3.0 - Interactive Saturday Lab Shell
+  100% License-Free & Standalone Engine
+  Commands: 'exit' to quit, 'clear' to reset, 'vars' to inspect
+=================================================================
+
+smc> let x = (10 * 5) + 2
+smc> print x
+52
+smc> acme(ttl=2) token = "VanishSoon"
+smc> print token
+VanishSoon
+smc> print "Cycle"
+[ACME_ANVIL] *ANVIL DROPPED* on 'token'! Ephemeral variable dissolved.
+Cycle
+```
+
+Interactive commands:
+* `vars`: Inspect all persistent variables and remaining Acme TTL timers.
+* `clear`: Wipe state and re-initialize a fresh laboratory.
+* `exit`: Cleanly quit the session.
+
 ---
 
 ## 6. The Sailor Moon & Cartoon Superpowers
