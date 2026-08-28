@@ -11,8 +11,11 @@ It translates the fundamental computational principles of **DNA and RNA** into m
 
 ---
 
-## 📖 Complete Documentation & Tutorial
-👉 **Read the comprehensive guide and manual in [docs/GUIDE.md](docs/GUIDE.md)**!
+## 📖 Master Handbook & Formal Specification
+👉 **[SMC_MASTER_HANDBOOK.md](SMC_MASTER_HANDBOOK.md)** *(The exhaustive guide with 7 real-world production blueprints!)*  
+👉 **[docs/SPECIFICATION.md](docs/SPECIFICATION.md)** *(The formal language specification and operator precedence table)*  
+👉 **[docs/GUIDE.md](docs/GUIDE.md)** *(The complete step-by-step tutorial)*  
+
 
 ---
 
