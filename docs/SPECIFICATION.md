@@ -21,15 +21,15 @@ integer_lit     = digit , { digit } ;
 float_lit       = digit , { digit } , "." , digit , { digit } ;
 number_lit      = integer_lit | float_lit ;
 
-escape_seq      = "\" , ( "n" | "t" | "r" | "\" | "'" | '"' | "$" | "`" ) ;
+escape_seq      = "\" , ( "n" | "t" | "r" | "\" | "'" | '"' | "$" | ? backtick ? ) ;
 char_single     = escape_seq | ? any character except "'" or "\" ? ;
 char_double     = escape_seq | ? any character except '"' or "\" ? ;
 string_lit      = ( "'" , { char_single } , "'" ) 
                 | ( '"' , { char_double } , '"' ) ;
 
 interp_expr     = "${" , expression , "}" ;
-template_char   = escape_seq | interp_expr | ? any character except "`" or "\" or "$" ? ;
-template_lit    = "`" , { template_char } , "`" ;
+template_char   = escape_seq | interp_expr | ? any character except backtick or "\" or "$" ? ;
+template_lit    = ? backtick ? , { template_char } , ? backtick ? ;
 
 boolean_lit     = "true" | "false" ;
 null_lit        = "null" ;
