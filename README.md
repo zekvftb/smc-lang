@@ -101,3 +101,16 @@ Run the comprehensive test suite:
 python -m pytest D:\smc_lang\tests/
 ```
 **All 15 tests pass in 0.12 seconds!**
+
+---
+
+## 📜 License & Enterprise Commercial Terms
+
+SMC is distributed under the **SMC Fair-Source License 1.0**:
+
+* 🎓 **100% Free for Individuals, Students, & Non-Commercial Use:** You can learn, play, modify, and build personal or academic projects completely free forever.
+* 🚀 **Small Business Safe Harbor:** 100% free for startups and companies with **gross annual revenues under $1,000,000 USD** and fewer than 10 employees.
+* 🏢 **Enterprise Commercial License:** Commercial use by large entities exceeding the threshold, or use as a paid hosted cloud service, requires an Enterprise Commercial License.
+
+For commercial licensing agreements and enterprise integration inquiries, contact:  
+**Jason Rezek** — [`zekvftb@gmail.com`](mailto:zekvftb@gmail.com)

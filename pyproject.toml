@@ -9,9 +9,9 @@ description = "Saturday Morning Cartoons (SMC): A biologically inspired, fault-t
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [
-    { name = "SMC Cartoon Lab Contributors" }
+    { name = "Jason Rezek", email = "zekvftb@gmail.com" }
 ]
-license = { text = "MIT" }
+license = { text = "Fair-Source-1.0 (Free for Individuals, Commercial for Enterprise)" }
 keywords = ["programming-language", "virtual-machine", "biology-inspired", "fault-tolerant", "cartoons"]
 dependencies = []
 

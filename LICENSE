@@ -1,17 +1,31 @@
-MIT License
-
-Copyright (c) 2026 Jason Rezek
+SMC Fair-Source License (Version 1.0)
+Copyright (c) 2026 Jason Rezek. All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+in the Software subject to the following conditions:
 
+1. INDIVIDUAL, ACADEMIC & NON-COMMERCIAL USE
+Use, copying, modification, merging, publishing, and distribution of the Software
+for personal, educational, academic, non-commercial, or hobbyist purposes is
+completely free of charge and permitted in perpetuity.
+
+2. SMALL BUSINESS SAFE HARBOR
+Use of the Software by any business entity whose gross annual revenues (or total
+funding raised) do not exceed $1,000,000 USD (one million United States dollars)
+and employs fewer than 10 full-time equivalent employees is completely free of charge.
+
+3. ENTERPRISE COMMERCIAL USE
+Any use of the Software by or on behalf of any commercial entity that exceeds the
+Small Business Safe Harbor threshold, or any use of the Software to provide a paid
+hosted cloud service, SaaS runtime, or managed execution platform, requires a paid
+Commercial License Agreement executed with the Copyright Holder.
+
+4. INTELLECTUAL PROPERTY & ATTRIBUTION
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
 
+DISCLAIMER OF WARRANTY:
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -19,3 +33,10 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+================================================================================
+For Enterprise Licensing, Commercial Inquiries, and Custom Integrations:
+Contact: Jason Rezek
+Email: zekvftb@gmail.com
+GitHub: https://github.com/zekvftb/smc-lang
+================================================================================
