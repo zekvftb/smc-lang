@@ -1,0 +1,33 @@
+# =============================================================
+# SMC v0.7.0 EXAMPLE: HexaPhase Multiplexing & PRF Slipping
+# =============================================================
+
+experiment "HexaPhase_v07_Demo"
+
+print "=== [SMC LAB] HEXAPHASE 6-CHANNEL MULTIPLEXING SYSTEM ==="
+
+# 1. Compress two biological payloads into 1 overlapping string
+let multiplexed_dna = hexaphase_compile("PEPTIDE_ALPHA", "ENZYME_BETA")
+print `Compiled Multiplexed Stream: ${multiplexed_dna}`
+
+# 2. Decompile all 6 forward and reverse channels
+let channels = hexaphase_channels(multiplexed_dna)
+print `Phase +0 Channel: ${channels["+0"]}`
+print `Phase +1 Channel: ${channels["+1"]}`
+print `Phase +2 Channel: ${channels["+2"]}`
+print `Phase -0 Channel: ${channels["-0"]}`
+
+# 3. Dynamic Programmed Ribosomal Frameshift (PRF)
+print "\n--- Testing Programmed Ribosomal Slipping (PRF) ---"
+slip(1)
+print `Execution track slipped to: Phase +${current_phase}`
+slip(1)
+print `Execution track slipped to: Phase +${current_phase}`
+
+# 4. Thermodynamic Attenuator Throttling Gate
+attenuator(threshold = 500) {
+    print "Attenuator Stem-Loop Gate: Backpressure regulated."
+}
+
+print "\n[SUCCESS] HexaPhase v0.7.0 execution completed flawlessly!"
+halt
