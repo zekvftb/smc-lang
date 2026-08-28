@@ -157,10 +157,24 @@ class SmcLexer:
             elif ch in ('"', "'"):
                 quote_char = self._advance()
                 val_chars = []
-                while self.pos < self.length and self._peek() != quote_char:
-                    val_chars.append(self._advance())
-                if self._peek() == quote_char:
-                    self._advance()  # closing quote
+                while self.pos < self.length:
+                    curr = self._peek()
+                    if curr == "\\":
+                        self._advance()  # skip backslash
+                        nxt = self._advance()
+                        if nxt == "n":
+                            val_chars.append("\n")
+                        elif nxt == "t":
+                            val_chars.append("\t")
+                        elif nxt == "r":
+                            val_chars.append("\r")
+                        else:
+                            val_chars.append(nxt)
+                    elif curr == quote_char:
+                        self._advance()  # closing quote
+                        break
+                    else:
+                        val_chars.append(self._advance())
                 tokens.append(CanonicalToken(TokenType.STRING, "".join(val_chars), start_line, start_col))
 
             # Numbers

@@ -1,0 +1,116 @@
+# =============================================================
+# SMC SAMPLE: Full-Stack Web Server (DexterVM Native HTTP Engine)
+# =============================================================
+# Run with:
+#   python -m smc.cli run D:\smc_lang\examples\smc_web_server.smc
+# Then open your browser at:
+#   http://localhost:3000
+# =============================================================
+
+experiment "Dexter_Laboratory_Web_Server"
+
+let server_visits = 0
+
+fn handle_request(req) {
+    let p = req["path"]
+    let m = req["method"]
+    server_visits += 1
+
+    print "[HTTP] Incoming " + m + " request to: " + p
+
+    # 1. Homepage Route (/)
+    if (p == "/") {
+        let html = "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>SMC Laboratory Server</title>"
+        html += "<style>"
+        html += "body { font-family: -apple-system, sans-serif; background: #0a0c10; color: #e2e8f0; margin: 0; padding: 40px; text-align: center; }"
+        html += ".card { background: #12161f; border: 1px solid #263445; border-radius: 12px; max-width: 650px; margin: 0 auto; padding: 40px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }"
+        html += "h1 { color: #00f0ff; margin-bottom: 10px; font-size: 2.2rem; }"
+        html += ".badge { display: inline-block; background: rgba(57, 255, 20, 0.15); color: #39ff14; border: 1px solid #39ff14; padding: 4px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; margin-bottom: 20px; }"
+        html += "p { color: #8899ac; line-height: 1.6; font-size: 1.05rem; }"
+        html += ".nav { margin: 30px 0; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }"
+        html += ".nav a { background: #181f2c; color: #00f0ff; border: 1px solid #263445; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; transition: 0.2s; }"
+        html += ".nav a:hover { border-color: #00f0ff; background: rgba(0, 240, 255, 0.1); }"
+        html += ".footer { font-size: 0.85rem; color: #4b5563; margin-top: 30px; }"
+        html += "</style></head><body>"
+        html += "<div class='card'>"
+        html += "<div class='badge'>DexterVM Native Web Server Active</div>"
+        html += "<h1>Welcome to Saturday Morning Cartoons</h1>"
+        html += "<p>This entire dynamic website is running live on the <b>SMC DexterVM</b> execution engine! No Node.js, no Flask, no Apache.</p>"
+        html += "<p>Total requests processed by laboratory: <b>" + str(server_visits) + "</b></p>"
+        html += "<div class='nav'>"
+        html += "<a href='/about'>📖 Architecture</a>"
+        html += "<a href='/login'>🔐 Ephemeral Login (Acme TTL)</a>"
+        html += "<a href='/api/status'>⚡ JSON API Status</a>"
+        html += "</div>"
+        html += "<div class='footer'>Powered by SMC v0.3.0 & DexterVM &bull; Protected under SMC Fair-Source License 1.0</div>"
+        html += "</div></body></html>"
+
+        return { "status": 200, "content_type": "text/html; charset=utf-8", "body": html }
+    }
+
+    # 2. About Route (/about)
+    if (p == "/about") {
+        let html = "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>About SMC</title>"
+        html += "<style>body { font-family: sans-serif; background: #0a0c10; color: #e2e8f0; padding: 40px; line-height: 1.6; max-width: 700px; margin: 0 auto; } a { color: #00f0ff; }</style></head><body>"
+        html += "<h1 style='color: #00f0ff;'>Biology & Computer Science</h1>"
+        html += "<p>SMC bridges real genetics with software architecture:</p>"
+        html += "<ul>"
+        html += "<li><b>Acme Anvil TTL:</b> Ephemeral memory modeled after mRNA half-life decay. Zero garbage collection pauses!</li>"
+        html += "<li><b>Codon Wobble:</b> Typo-tolerant keyword matching inspired by biological codon degeneracy.</li>"
+        html += "<li><b>MPP Transformations:</b> Cellular differentiation and polymorphic state machines.</li>"
+        html += "<li><b>CatDog Bytecode:</b> Dual reading frames for 2x memory density.</li>"
+        html += "</ul>"
+        html += "<p><a href='/'>&larr; Return to Laboratory Homepage</a></p>"
+        html += "</body></html>"
+
+        return { "status": 200, "content_type": "text/html; charset=utf-8", "body": html }
+    }
+
+    # 3. Ephemeral Login Route (/login) — Zero-Redis Sessions!
+    if (p == "/login") {
+        # Acme Anvil ephemeral session (auto-vaporizes after 5 requests!)
+        acme(ttl=5) session_token = "Lab_Session_Jason_Authorized"
+
+        let html = "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Ephemeral Session</title>"
+        html += "<style>body { font-family: sans-serif; background: #0a0c10; color: #e2e8f0; padding: 40px; text-align: center; } a { color: #00f0ff; }</style></head><body>"
+        html += "<div style='background: #12161f; border: 1px solid #bd00ff; border-radius: 12px; max-width: 500px; margin: 0 auto; padding: 30px;'>"
+        html += "<h2 style='color: #bd00ff;'>Ephemeral Session Active!</h2>"
+        html += "<p>Session Token: <code>" + str(session_token) + "</code></p>"
+        html += "<p style='color: #ff3366;'><b>Zero-Redis Architecture:</b> This session has an Acme TTL of 5 requests. After 5 requests, an anvil will drop and dissolve this token from RAM automatically!</p>"
+        html += "<p><a href='/'>&larr; Return Home</a></p>"
+        html += "</div></body></html>"
+
+        return { "status": 200, "content_type": "text/html; charset=utf-8", "body": html }
+    }
+
+    # 4. JSON API Route (/api/status)
+    if (p == "/api/status") {
+        let json_body = "{"
+        json_body += "\"status\": \"ONLINE\","
+        json_body += "\"engine\": \"DexterVM\","
+        json_body += "\"version\": \"0.3.0\","
+        json_body += "\"language\": \"SMC (Saturday Morning Cartoons)\","
+        json_body += "\"processed_requests\": " + str(server_visits)
+        json_body += "}"
+
+        return { "status": 200, "content_type": "application/json", "body": json_body }
+    }
+
+    # 5. Tuxedo Mask 404 Fallback
+    let not_found_html = "<!DOCTYPE html><html><body style='font-family: sans-serif; background: #0a0c10; color: #e2e8f0; text-align: center; padding: 50px;'>"
+    not_found_html += "<h1 style='color: #ffd166;'>404 &mdash; Tuxedo Mask Intercept</h1>"
+    not_found_html += "<p>Tuxedo Mask throws a red rose: <i>'My work here is done, but the route " + p + " could not be found!'</i></p>"
+    not_found_html += "<a href='/' style='color: #00f0ff;'>Return to Laboratory</a>"
+    not_found_html += "</body></html>"
+
+    return { "status": 404, "content_type": "text/html; charset=utf-8", "body": not_found_html }
+}
+
+print "================================================================="
+print "  DEXTER_VM v0.3.0 &mdash; Full-Stack Laboratory Web Server"
+print "  Listening on: http://localhost:3000"
+print "  Press Ctrl+C in terminal to stop."
+print "================================================================="
+
+serve_http(3000, "handle_request")
+halt

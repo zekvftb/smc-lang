@@ -198,6 +198,7 @@ power *= 2      # 150
 * **`type(val)`**: Returns `"dict"`, `"list"`, `"string"`, or `"number"`.
 * **`read_file(path)`**: Reads text from a local file.
 * **`write_file(path, content)`**: Writes text to a local file.
+* **`serve_http(port, handler_fn)`**: Launches a native high-performance HTTP web server listening on `http://localhost:port`, routing incoming requests directly to your SMC handler function!
 
 ```smc
 let inventory = ["Potion"]

@@ -163,3 +163,13 @@ def test_mpp_shorthand_transformation():
     res = run_code(code)
     assert res["final_variables"]["hero"] == "Sailor_Moon"
     assert any("[MPP]" in line for line in res["stdout"])
+
+
+def test_string_backslash_escapes():
+    """Verify string literals handle backslash escapes properly."""
+    code = (
+        'let escaped = "Hello \\"World\\"\\nLine 2"\n'
+        'halt\n'
+    )
+    res = run_code(code)
+    assert res["final_variables"]["escaped"] == 'Hello "World"\nLine 2'

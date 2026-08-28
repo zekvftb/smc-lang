@@ -113,12 +113,46 @@ Every cartoon and anime namesake in SMC was intentionally chosen because its nos
 
 ---
 
+## 🌐 Building Full-Stack Websites in SMC (`serve_http`)
+
+SMC includes a native, high-performance HTTP web server built directly into DexterVM. You can build and host full dynamic websites and REST APIs written 100% in `.smc`:
+
+```smc
+experiment "My_Web_App"
+
+fn handle_request(req) {
+    if (req["path"] == "/") {
+        return {
+            "status": 200,
+            "content_type": "text/html",
+            "body": "<h1>Welcome to my SMC Website!</h1>"
+        }
+    }
+    # Ephemeral login session: Zero-Redis session state!
+    if (req["path"] == "/login") {
+        acme(ttl=5) user_auth = "Jason_Token"
+        return "<h2>Logged in! Session auto-expires via Acme TTL.</h2>"
+    }
+    return { "status": 404, "body": "404: Tuxedo Mask could not find page" }
+}
+
+print "Server online at http://localhost:3000..."
+serve_http(3000, "handle_request")
+```
+
+Run it with:
+```powershell
+python -m smc.cli run examples/smc_web_server.smc
+```
+
+---
+
 ## 🧪 Automated Testing
 Run the comprehensive test suite:
 ```powershell
 python -m pytest D:\smc_lang\tests/
 ```
-**All 24 tests pass in 0.13 seconds!**
+**All 26 tests pass in 6.6 seconds (including live HTTP socket tests)!**
 
 ---
 

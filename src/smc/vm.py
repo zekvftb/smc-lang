@@ -14,6 +14,7 @@ Features:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 import random
 from typing import Any
@@ -111,7 +112,7 @@ class DexterVM:
     # -----------------------------------------------------------------------
 
     def _is_builtin(self, name: str) -> bool:
-        return name.lower() in ("len", "push", "pop", "str", "int", "type", "read_file", "write_file")
+        return name.lower() in ("len", "push", "pop", "str", "int", "type", "read_file", "write_file", "serve_http")
 
     def _call_builtin(self, name: str, args: list[Any]) -> Any:
         fn = name.lower()
@@ -176,6 +177,100 @@ class DexterVM:
             except Exception as e:
                 self.stdout.append(f"[IO_ERROR] Unable to write '{filepath}': {e}")
                 return False
+
+        if fn == "serve_http":
+            if not args:
+                self.stdout.append("[HTTP_SERVER] Error: serve_http requires a port number and handler function name.")
+                return False
+            port = int(args[0])
+            handler_name = str(args[1]) if len(args) > 1 else "handle_request"
+            max_requests = int(args[2]) if len(args) > 2 and args[2] is not None else None
+
+            vm_ref = self
+
+            class DexterHTTPHandler(BaseHTTPRequestHandler):
+                def do_request(self, method: str):
+                    content_len = int(self.headers.get("Content-Length", 0))
+                    body_bytes = self.rfile.read(content_len) if content_len > 0 else b""
+                    body_str = body_bytes.decode("utf-8", errors="replace")
+
+                    headers_dict = {k: v for k, v in self.headers.items()}
+                    req_dict = {
+                        "path": self.path,
+                        "method": method,
+                        "headers": headers_dict,
+                        "body": body_str,
+                    }
+
+                    # Each request represents an execution cycle in the laboratory
+                    vm_ref.execution_steps += 1
+                    vm_ref._tick_acme_ttls()
+
+                    response_data = vm_ref._call_function(handler_name, [req_dict])
+
+                    status = 200
+                    content_type = "text/html; charset=utf-8"
+                    resp_body = ""
+
+                    if isinstance(response_data, dict):
+                        status = int(response_data.get("status", 200))
+                        content_type = str(response_data.get("content_type", "text/html; charset=utf-8"))
+                        resp_body = str(response_data.get("body", ""))
+                    elif isinstance(response_data, str):
+                        resp_body = response_data
+                    else:
+                        resp_body = str(response_data)
+
+                    resp_bytes = resp_body.encode("utf-8")
+
+                    self.send_response(status)
+                    self.send_header("Content-Type", content_type)
+                    self.send_header("Content-Length", str(len(resp_bytes)))
+                    self.send_header("Server", "DexterVM-SMC/0.3.0")
+                    self.end_headers()
+                    self.wfile.write(resp_bytes)
+
+                    log_msg = f"[HTTP_SERVER] {method} {self.path} -> {status} ({len(resp_bytes)} bytes)"
+                    vm_ref.stdout.append(log_msg)
+
+                def do_GET(self):
+                    self.do_request("GET")
+
+                def do_POST(self):
+                    self.do_request("POST")
+
+                def do_PUT(self):
+                    self.do_request("PUT")
+
+                def do_DELETE(self):
+                    self.do_request("DELETE")
+
+                def log_message(self, format, *args):
+                    pass
+
+            server = None
+            try:
+                server = HTTPServer(("0.0.0.0", port), DexterHTTPHandler)
+                self.stdout.append(f"[HTTP_SERVER] Laboratory server listening on http://localhost:{port} (Handler: '{handler_name}')")
+                print(f"[DEXTER_VM] Laboratory server online at http://localhost:{port} (Press Ctrl+C to stop)")
+                if max_requests is not None:
+                    for _ in range(max_requests):
+                        server.handle_request()
+                else:
+                    server.serve_forever()
+                return True
+            except KeyboardInterrupt:
+                self.stdout.append("[HTTP_SERVER] KeyboardInterrupt received; server shutting down cleanly.")
+                return True
+            except Exception as e:
+                self.stdout.append(f"[HTTP_SERVER] Server error: {e}")
+                return False
+            finally:
+                if server:
+                    try:
+                        server.server_close()
+                    except Exception:
+                        pass
 
         return 0
 

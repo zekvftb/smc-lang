@@ -156,7 +156,7 @@ def levenshtein_distance(s1: str, s2: str) -> int:
     return prev_row[-1]
 
 
-BUILTIN_IDENTIFIERS = {"LEN", "POP", "INT", "STR", "PUSH", "TYPE", "READ_FILE", "WRITE_FILE"}
+BUILTIN_IDENTIFIERS = {"LEN", "POP", "INT", "STR", "PUSH", "TYPE", "READ_FILE", "WRITE_FILE", "SERVE_HTTP"}
 
 
 def resolve_wobble_opcode(raw_token: str, max_distance: int = 2) -> Opcode | None:
