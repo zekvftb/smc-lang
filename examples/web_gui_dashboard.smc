@@ -1,0 +1,47 @@
+# =====================================================================
+# 🧪 SMC Web GUI Dashboard (Interactive HTML5/CSS/JS Application)
+# Run with: smc run examples/web_gui_dashboard.smc
+# Then open: http://localhost:8080 in your browser!
+# =====================================================================
+
+experiment "SMC_Web_GUI_Dashboard"
+
+fn app_router(req) {
+    let path = req["path"]
+    let method = req["method"]
+
+    # 1. API Endpoint for Real-Time HexaPhase Data
+    if (path == "/api/data") {
+        let stream_seq = "ATGCGATCGATCGATCGATC"
+        hexaphase stream_seq {
+            let ch0 = hexaphase_channels["+0"]
+            let ch1 = hexaphase_channels["+1"]
+            let ch2 = hexaphase_channels["+2"]
+            let r0 = hexaphase_channels["-0"]
+        }
+        let payload = {
+            "status": "ONLINE",
+            "phase": current_phase,
+            "channels": { "+0": ch0, "+1": ch1, "+2": ch2, "-0": r0 }
+        }
+        return {
+            "status": 200,
+            "content_type": "application/json",
+            "body": to_json(payload)
+        }
+    }
+
+    # 2. Main GUI View (Interactive Dashboard)
+    let page = "<html><head><title>Dexter Lab GUI</title><style>body{font-family:sans-serif;background:#0f172a;color:#f8fafc;padding:40px;text-align:center;}.card{background:#1e293b;border-radius:12px;padding:30px;max-width:550px;margin:auto;box-shadow:0 10px 30px rgba(0,0,0,0.5);border:1px solid #334155;}button{background:#ec4899;color:white;border:none;padding:12px 24px;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;margin-top:15px;}button:hover{background:#db2777;}.stat{background:#0f172a;padding:12px;border-radius:8px;margin:10px 0;font-family:monospace;}</style></head><body><div class='card'><h1>🧪 Dexter Laboratory GUI</h1><p>Powered 100% by <strong>SMC v0.7.0</strong></p><div class='stat' id='output'>Click below to fetch live genomic channels!</div><button onclick='loadData()'>Fetch HexaPhase Channels</button></div><script>function loadData(){fetch('/api/data').then(r=>r.json()).then(d=>{document.getElementById('output').innerHTML='<strong>Status:</strong> '+d.status+'<br><strong>Phase +0:</strong> '+d.channels['+0']+'<br><strong>Phase +1:</strong> '+d.channels['+1'];});}</script></body></html>"
+
+    return {
+        "status": 200,
+        "content_type": "text/html; charset=utf-8",
+        "body": page
+    }
+}
+
+print "🚀 SMC Interactive Web GUI running at http://localhost:8080"
+serve_http(8080, "app_router")
+
+halt

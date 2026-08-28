@@ -1,0 +1,16 @@
+# =====================================================================
+# 🖥️ SMC Native Desktop Window GUI (Tkinter Desktop App)
+# Run with: smc run examples/desktop_gui_tkinter.smc
+# =====================================================================
+
+experiment "SMC_Native_Desktop_GUI"
+
+print "Initializing Native Desktop GUI window..."
+
+# 1. Launch a Native Desktop Window using Python's standard Tkinter
+let code = "import tkinter as tk; root = tk.Tk(); root.title('SMC Dexter Laboratory'); root.geometry('420x250'); root.configure(bg='#0f172a'); lbl = tk.Label(root, text='🧪 Dexter Laboratory GUI', font=('Arial', 16, 'bold'), fg='#38bdf8', bg='#0f172a'); lbl.pack(pady=20); sub = tk.Label(root, text='Running natively inside DexterVM v0.7.0', font=('Arial', 10), fg='#94a3b8', bg='#0f172a'); sub.pack(); btn = tk.Button(root, text='Drop Acme Anvil', bg='#ec4899', fg='white', font=('Arial', 12, 'bold'), padx=15, pady=8, relief='flat', command=lambda: lbl.configure(text='*ANVIL DROPPED* 💥', fg='#f43f5e')); btn.pack(pady=25); root.mainloop()"
+
+py_eval(code)
+
+print "Desktop GUI closed cleanly."
+halt
