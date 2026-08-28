@@ -2,7 +2,7 @@
 
 Welcome to **SMC (Saturday Morning Cartoons)**! 
 
-SMC is an experimental, biological-inspired programming language and virtual machine runtime. It translates the 4 most ingenious information tricks of **DNA and RNA** into practical software architecture, wrapped in the nostalgic fun of 90s Saturday morning cartoons.
+SMC is an experimental, biological-inspired programming language and virtual machine runtime. It translates the fundamental computational principles of **DNA and RNA** into practical software architecture, wrapped in the nostalgic fun of 90s Saturday morning cartoons.
 
 ---
 
@@ -11,13 +11,20 @@ SMC is an experimental, biological-inspired programming language and virtual mac
 2. [Installation & Setup](#2-installation--setup)
 3. [Your First SMC Script ("Hello Toon!")](#3-your-first-smc-script)
 4. [Variables & The Powerpuff Girls State Machine](#4-variables--chemical-state)
-5. [The Biological Superpowers](#5-the-biological-superpowers)
+5. [Control Flow & Arithmetic](#5-control-flow--arithmetic)
+6. [Modular Multi-File Architecture (`import`)](#6-modular-multi-file-architecture-import)
+7. [The Interactive Live Lab Shell (REPL)](#7-the-interactive-live-lab-shell-repl)
+8. [The Biological Superpowers](#8-the-biological-superpowers)
    - [Superpower 1: Wobble Typo-Tolerance (Codon Degeneracy)](#superpower-1-wobble-typo-tolerance)
    - [Superpower 2: Acme Anvil Ephemeral Memory (mRNA Decay)](#superpower-2-acme-anvil-ephemeral-memory)
-   - [Superpower 3: Captain Planet Content-Addressable Calling](#superpower-3-captain-planet-dispatch)
-   - [Superpower 4: CatDog Overlapping Bytecode (2 Programs in 1)](#superpower-4-catdog-overlapping-bytecode)
-6. [The Complete Cartoon Opcode Dictionary](#6-the-complete-cartoon-opcode-dictionary)
-7. [Running & Debugging Your Code](#7-running--debugging-your-code)
+   - [Superpower 3: Sailor Moon Transformations (`mpp`)](#superpower-3-sailor-moon-transformations-mpp--moon_prism_power)
+   - [Superpower 4: Planetary Senshi & Captain Planet Dispatch](#superpower-4-planetary-senshi--captain-planet-dispatch)
+   - [Superpower 5: Tuxedo Mask Watchdog Fallback](#superpower-5-tuxedo-mask-watchdog-fallback)
+   - [Superpower 6: HexaPhase Multiplexing & Ribosomal Slipping](#superpower-6-hexaphase-multiplexing--ribosomal-slipping-v070)
+9. [Python Ecosystem FFI Bridge & Web Server](#9-python-ecosystem-ffi-bridge--web-server)
+10. [Formal Language Specification](#10-formal-language-specification)
+11. [Running & Debugging Your Code](#11-running--debugging-your-code)
+12. [Visual Studio Code Extension](#12-visual-studio-code-extension)
 
 ---
 
@@ -44,6 +51,8 @@ SMC runs 100% locally on your PC using Python 3.11+. It has zero external depend
 
 To install the SMC command-line tool:
 ```powershell
+pip install smc-lang
+# or from source:
 pip install -e D:\smc_lang\
 ```
 
@@ -51,7 +60,7 @@ Verify that it works:
 ```powershell
 python -m pytest D:\smc_lang\tests/
 ```
-*(All 6 tests should pass in less than 0.1 seconds!)*
+*(All 47 tests should pass in less than 7 seconds!)*
 
 ---
 
@@ -72,7 +81,7 @@ THATS_ALL_FOLKS
 
 ### Run it from your terminal:
 ```powershell
-python -m smc.cli run hello.smc
+smc run hello.smc
 ```
 
 ### Output:
@@ -108,7 +117,7 @@ THATS_ALL_FOLKS
 
 ---
 
-## 5. Control Flow & Arithmetic (Python Parity)
+## 5. Control Flow & Arithmetic
 
 SMC supports full mathematical expressions and standard control flow:
 
@@ -204,7 +213,7 @@ power *= 2      # 150
 * **`values(dict)`**: Returns all values from a dictionary.
 * **`contains(collection, target)`**: Checks membership in lists, dictionaries, and strings.
 * **`serve_file(path)`**: Serves static files with automatic MIME-type detection in web servers.
-* **`serve_http(port, handler_fn)`**: Launches a native high-performance HTTP web server listening on `http://localhost:port`, routing incoming requests directly to your SMC handler function!
+* **`serve_http(port, handler_fn)`**: Launches a native high-performance HTTP web server.
 
 ```smc
 let user = { "name": "Dexter", "level": 10 }
@@ -236,16 +245,15 @@ print `Computed area: ${area}`
 
 ## 7. The Interactive Live Lab Shell (REPL)
 
-Instead of running files, you can experiment in a live, interactive DexterVM shell:
+Experiment in a live, interactive DexterVM shell:
 
 ```powershell
-smc
-# or: python -m smc.cli repl
+smc repl
 ```
 
 ```text
 =================================================================
-  DEXTER_VM v0.3.0 - Interactive Saturday Lab Shell
+  DEXTER_VM v0.7.0 - Interactive Saturday Lab Shell
   100% License-Free & Standalone Engine
   Commands: 'exit' to quit, 'clear' to reset, 'vars' to inspect
 =================================================================
@@ -261,14 +269,9 @@ smc> print "Cycle"
 Cycle
 ```
 
-Interactive commands:
-* `vars`: Inspect all persistent variables and remaining Acme TTL timers.
-* `clear`: Wipe state and re-initialize a fresh laboratory.
-* `exit`: Cleanly quit the session.
-
 ---
 
-## 6. The Sailor Moon & Cartoon Superpowers
+## 8. The Biological Superpowers
 
 ### Superpower 1: Wobble Typo-Tolerance
 *Biological Principle: Codon Degeneracy*

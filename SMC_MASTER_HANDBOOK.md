@@ -43,7 +43,7 @@ reserved_token  = "." | ";" | "@" | "~" ;
 3. **Built-in Shadowing:** User-defined variables and function declarations within an active scope shadow standard built-in functions of the same name (e.g. declaring `let len = 5` shadows built-in `len()`).
 4. **Reserved Symbols:** The dot (`.`), semicolon (`;`), at-sign (`@`), and tilde (`~`) tokens are reserved for future namespace and macro extensions. Subscript indexing `dict["key"]` is the canonical member access operator.
 
-### 1.2 Expression Grammar (Uniform Postfix Pratt Hierarchy)
+### 1.3 Expression Grammar (Uniform Postfix Pratt Hierarchy)
 ```ebnf
 primary_expr    = literal
                 | identifier
@@ -69,7 +69,7 @@ or_expr         = and_expr , { ( "||" | "or" ) , and_expr } ;
 expression      = or_expr ;
 ```
 
-### 1.3 Statement Grammar
+### 1.4 Statement Grammar
 ```ebnf
 program         = { statement } ;
 block           = "{" , { statement } , "}" ;
