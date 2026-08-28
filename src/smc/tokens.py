@@ -77,6 +77,9 @@ class Opcode(str, Enum):
     MUTATE = "MUTATE"
     IMPORT = "IMPORT"
     PY_IMPORT = "PY_IMPORT"
+    HEXAPHASE = "HEXAPHASE"
+    SLIP = "SLIP"
+    ATTENUATOR = "ATTENUATOR"
     HALT = "HALT"
 
 
@@ -137,6 +140,15 @@ OPCODE_SYNONYMS: dict[Opcode, list[str]] = {
     Opcode.PY_IMPORT: [
         "PY_IMPORT", "PYTHON_IMPORT", "IMPORT_PY", "CYTO_BRIDGE", "PYTHON"
     ],
+    Opcode.HEXAPHASE: [
+        "HEXAPHASE", "HEXA_PHASE", "MULTIPLEX", "POLYPHASE", "CATDOG", "CAT_DOG"
+    ],
+    Opcode.SLIP: [
+        "SLIP", "FRAMESHIFT", "PRF", "RIBO_SLIP", "PHASE_SHIFT"
+    ],
+    Opcode.ATTENUATOR: [
+        "ATTENUATOR", "THROTTLE", "STEM_LOOP", "HAIRPIN_GATE", "PAUSE_GATE"
+    ],
     Opcode.HALT: [
         "HALT", "EXIT", "THATS_ALL_FOLKS", "COWABUNGA", "FIN"
     ],
@@ -172,7 +184,8 @@ def levenshtein_distance(s1: str, s2: str) -> int:
 BUILTIN_IDENTIFIERS = {
     "LEN", "POP", "INT", "STR", "PUSH", "TYPE", "READ_FILE", "WRITE_FILE", "SERVE_HTTP",
     "TO_JSON", "FROM_JSON", "RANGE", "SPLIT", "JOIN", "KEYS", "VALUES", "CONTAINS", "SERVE_FILE",
-    "PY_CALL", "PY_EVAL", "TRUE", "FALSE", "NULL", "AND", "OR"
+    "PY_CALL", "PY_EVAL", "HEXAPHASE_COMPILE", "HEXAPHASE_DECOMPILE", "PHASE_SLIP", "HEXAPHASE_CHANNELS",
+    "TRUE", "FALSE", "NULL", "AND", "OR"
 }
 
 
@@ -192,8 +205,8 @@ def resolve_wobble_opcode(raw_token: str, max_distance: int = 2) -> Opcode | Non
     if len(token_clean) <= 1:
         return None
 
-    # For short tokens (<= 4 chars), allow at most 1 typo to prevent false positives
-    allowed_dist = 1 if len(token_clean) <= 4 else max_distance
+    # For tokens <= 6 chars, allow at most 1 typo to prevent false positive collisions
+    allowed_dist = 1 if len(token_clean) <= 6 else max_distance
 
     best_op = None
     best_dist = 999

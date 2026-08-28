@@ -2,7 +2,7 @@
   "name": "smc-lang",
   "displayName": "SMC (Saturday Morning Cartoons) Language",
   "description": "Syntax highlighting and language support for the biologically inspired SMC programming language",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "publisher": "zekvftb",
   "license": "SEE LICENSE IN LICENSE",
   "repository": {

@@ -27,6 +27,9 @@ const OPCODE_SYNONYMS = {
     MUTATE: ["MUTATE", "DEE_DEE_MUTATION", "DEE_DEE_BUTTON", "OOPS_MUTATION", "RADIOACTIVE_SPIDER"],
     IMPORT: ["IMPORT", "INCLUDE", "REQUIRE", "LOAD_MODULE", "PLASMID_INJECT", "TRANSFECT"],
     PY_IMPORT: ["PY_IMPORT", "PYTHON_IMPORT", "IMPORT_PY", "CYTO_BRIDGE", "PYTHON"],
+    HEXAPHASE: ["HEXAPHASE", "HEXA_PHASE", "MULTIPLEX", "POLYPHASE", "CATDOG", "CAT_DOG"],
+    SLIP: ["SLIP", "FRAMESHIFT", "PRF", "RIBO_SLIP", "PHASE_SHIFT"],
+    ATTENUATOR: ["ATTENUATOR", "THROTTLE", "STEM_LOOP", "HAIRPIN_GATE", "PAUSE_GATE"],
     HALT: ["HALT", "EXIT", "THATS_ALL_FOLKS", "COWABUNGA", "FIN"]
 };
 
@@ -45,7 +48,8 @@ for (const [op, syns] of Object.entries(OPCODE_SYNONYMS)) {
 const BUILTIN_NAMES = new Set([
     "LEN", "PUSH", "POP", "STR", "INT", "TYPE", "READ_FILE", "WRITE_FILE", "SERVE_HTTP",
     "TO_JSON", "FROM_JSON", "RANGE", "SPLIT", "JOIN", "KEYS", "VALUES", "CONTAINS", "SERVE_FILE",
-    "PY_CALL", "PY_EVAL", "TRUE", "FALSE", "NULL", "AND", "OR"
+    "PY_CALL", "PY_EVAL", "HEXAPHASE_COMPILE", "HEXAPHASE_DECOMPILE", "HEXAPHASE_CHANNELS", "PHASE_SLIP",
+    "TRUE", "FALSE", "NULL", "AND", "OR"
 ]);
 
 function levenshteinDistance(s1, s2) {
@@ -894,6 +898,34 @@ class DexterVM {
                 if (Array.isArray(args[0]) || typeof args[0] === "string") return args[0].includes(args[1]);
                 if (args[0] && typeof args[0] === "object") return args[1] in args[0];
                 return false;
+            }
+            if (fnLower === "hexaphase_compile") {
+                const s1 = String(args[0] ?? ""), s2 = String(args[1] ?? "");
+                const res = [];
+                const maxL = Math.max(s1.length, s2.length);
+                for (let i = 0; i < maxL; i++) {
+                    if (i < s1.length) res.push(s1[i]);
+                    if (i < s2.length) res.push(s2[i]);
+                }
+                return res.join("");
+            }
+            if (fnLower === "hexaphase_decompile" || fnLower === "hexaphase_channels") {
+                const s = String(args[0] ?? "");
+                const n = s.length;
+                const rev = s.split("").reverse().join("");
+                return {
+                    "+0": Array.from({length: Math.ceil(n/3)}, (_, i) => s[i*3]).join(""),
+                    "+1": Array.from({length: Math.ceil((n-1)/3)}, (_, i) => s[i*3+1]).join(""),
+                    "+2": Array.from({length: Math.ceil((n-2)/3)}, (_, i) => s[i*3+2]).join(""),
+                    "-0": Array.from({length: Math.ceil(n/3)}, (_, i) => rev[i*3]).join(""),
+                    "-1": Array.from({length: Math.ceil((n-1)/3)}, (_, i) => rev[i*3+1]).join(""),
+                    "-2": Array.from({length: Math.ceil((n-2)/3)}, (_, i) => rev[i*3+2]).join(""),
+                };
+            }
+            if (fnLower === "phase_slip") {
+                const s = String(args[0] ?? "");
+                const offset = (parseInt(args[1]) || 1) % (s.length || 1);
+                return s.slice(offset) + s.slice(0, offset);
             }
             if (fnLower === "serve_http") {
                 this.serverPort = args[0] || 3000;

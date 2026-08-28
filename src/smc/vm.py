@@ -29,6 +29,7 @@ from typing import Any
 
 from smc.parser import (
     AstNode,
+    AttenuatorNode,
     BinaryOpNode,
     CallRingNode,
     CompoundAssignNode,
@@ -39,6 +40,7 @@ from smc.parser import (
     FunctionCallNode,
     FunctionDefNode,
     HaltNode,
+    HexaPhaseNode,
     IfNode,
     ImportNode,
     IndexAccessNode,
@@ -51,6 +53,7 @@ from smc.parser import (
     PyImportNode,
     ReturnNode,
     SetVarNode,
+    SlipNode,
     SummonNode,
     TransformNode,
     TtlBoxNode,
@@ -88,6 +91,7 @@ class DexterVM:
         self.imported_modules: set[Path] = set()
         self.py_modules: dict[str, Any] = {}
         self.current_file: Path | None = None
+        self.current_phase_offset: int = 0
         self.rng = random.Random(seed)
 
     def _marshal_from_python(self, val: Any) -> Any:
@@ -138,7 +142,8 @@ class DexterVM:
         return name.lower() in (
             "len", "push", "pop", "str", "int", "type", "read_file", "write_file",
             "serve_http", "to_json", "from_json", "range", "split", "join", "keys",
-            "values", "contains", "serve_file", "py_call", "py_eval", "py_import"
+            "values", "contains", "serve_file", "py_call", "py_eval", "py_import",
+            "hexaphase_compile", "hexaphase_decompile", "hexaphase_channels", "phase_slip"
         )
 
     def _call_builtin(self, name: str, args: list[Any]) -> Any:
@@ -355,6 +360,41 @@ class DexterVM:
             except Exception as e:
                 self.stdout.append(f"[PY_BRIDGE_ERROR] Failed to import Python module '{mod_name}': {e}")
                 return False
+
+        if fn == "hexaphase_compile":
+            if len(args) < 2:
+                return ""
+            s1, s2 = str(args[0]), str(args[1])
+            res = []
+            max_l = max(len(s1), len(s2))
+            for i in range(max_l):
+                if i < len(s1):
+                    res.append(s1[i])
+                if i < len(s2):
+                    res.append(s2[i])
+            return "".join(res)
+
+        if fn in ("hexaphase_decompile", "hexaphase_channels"):
+            if not args:
+                return {}
+            s = str(args[0])
+            n = len(s)
+            return {
+                "+0": "".join(s[i] for i in range(0, n, 3)),
+                "+1": "".join(s[i] for i in range(1, n, 3)),
+                "+2": "".join(s[i] for i in range(2, n, 3)),
+                "-0": "".join(s[::-1][i] for i in range(0, n, 3)),
+                "-1": "".join(s[::-1][i] for i in range(1, n, 3)),
+                "-2": "".join(s[::-1][i] for i in range(2, n, 3)),
+            }
+
+        if fn == "phase_slip":
+            if not args:
+                return ""
+            s = str(args[0])
+            offset = int(args[1]) if len(args) > 1 else 1
+            offset = offset % len(s) if len(s) > 0 else 0
+            return s[offset:] + s[:offset]
 
         if fn == "serve_http":
             if not args:
@@ -809,7 +849,45 @@ class DexterVM:
             except Exception as e:
                 self.stdout.append(f"[PY_BRIDGE_ERROR] Failed to import Python module '{mod_name}': {e}")
 
-        # 18. HALT
+        # 18. HEXAPHASE (Multiplexed 6-Phase Execution)
+        elif isinstance(node, HexaPhaseNode):
+            val = self.evaluate_expression(node.target_expr)
+            val_str = str(val)
+            n = len(val_str)
+            phases = {
+                "+0": "".join(val_str[i] for i in range(0, n, 3)),
+                "+1": "".join(val_str[i] for i in range(1, n, 3)),
+                "+2": "".join(val_str[i] for i in range(2, n, 3)),
+                "-0": "".join(val_str[::-1][i] for i in range(0, n, 3)),
+                "-1": "".join(val_str[::-1][i] for i in range(1, n, 3)),
+                "-2": "".join(val_str[::-1][i] for i in range(2, n, 3)),
+            }
+            self.set_var("hexaphase_channels", phases)
+            self.set_var("stream", val_str)
+            self.stdout.append(f"[HEXAPHASE] Multiplexed 6-phase channels initialized for stream ({len(val_str)} units).")
+            for stmt in node.body:
+                if self.halted or self.return_triggered:
+                    break
+                self.execute_node(stmt)
+
+        # 19. SLIP (Programmed Ribosomal Frameshift)
+        elif isinstance(node, SlipNode):
+            by_val = int(self.evaluate_expression(node.by_expr))
+            self.current_phase_offset = (self.current_phase_offset + by_val) % 3
+            self.set_var("current_phase", self.current_phase_offset)
+            self.stdout.append(f"[RIBO_SLIP] (Programmed Frameshift) Execution track slipped by {by_val:+d} -> Phase +{self.current_phase_offset}.")
+
+        # 20. ATTENUATOR (Thermodynamic Stem-Loop Pause Gate)
+        elif isinstance(node, AttenuatorNode):
+            thresh = self.evaluate_expression(node.threshold_expr)
+            thresh_num = float(thresh) if isinstance(thresh, (int, float)) else 100.0
+            self.stdout.append(f"[ATTENUATOR_GATE] (Stem-Loop Pause Gate) Throttling barrier armed (Threshold: {thresh_num}).")
+            for stmt in node.body:
+                if self.halted or self.return_triggered:
+                    break
+                self.execute_node(stmt)
+
+        # 21. HALT
         elif isinstance(node, HaltNode):
             self.halted = True
             self.stdout.append("[THATS_ALL_FOLKS] [HALT] Program reached clean termination.")

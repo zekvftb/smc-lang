@@ -11,7 +11,7 @@
         <div class="logo-group">
             <span class="logo-badge">SMC</span>
             <h2>Saturday Morning Cartoons</h2>
-            <span class="badge badge-cyan">v0.6.0</span>
+            <span class="badge badge-cyan">v0.7.0</span>
             <span class="badge badge-green">In-Browser VM</span>
         </div>
         <div class="header-links">
@@ -24,6 +24,7 @@
     <div class="control-bar">
         <label for="sample-select" style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted);">Lab Presets:</label>
         <select id="sample-select">
+            <option value="hexaphase">⚡ HexaPhase Multiplexing & PRF Slipping (v0.7.0)</option>
             <option value="python_bridge">🧬 Python Ecosystem Bridge (py_call, py_eval, py_import)</option>
             <option value="web_server">🌐 Full-Stack Web Server (serve_http, to_json, Templates)</option>
             <option value="modular">📦 Modular Multi-File Import (import 'math_utils.smc')</option>
@@ -110,7 +111,42 @@
 
     <script src="playground.js"></script>
     <script>
-        const PRESETS = {
+        const SAMPLES = {
+            hexaphase: `# =============================================================
+# SMC SAMPLE: HexaPhase Multiplexing & Ribosomal Slipping
+# =============================================================
+experiment "HexaPhase_Multiplex_Lab"
+
+print "=== ⚡ HEXAPHASE 6-CHANNEL MULTIPLEXING DEMO ==="
+
+# 1. Compress two distinct subroutines into one single overlapping string
+let multiplexed_dna = hexaphase_compile("PEPTIDE_ALPHA", "ENZYME_BETA")
+print \`Compiled Multiplexed DNA Sequence: \${multiplexed_dna}\`
+
+# 2. Decompile all 6 forward (+0,+1,+2) and reverse (-0,-1,-2) reading channels
+let channels = hexaphase_channels(multiplexed_dna)
+print \`Phase +0 (Primary Track):    \${channels["+0"]}\`
+print \`Phase +1 (Embedded Track):   \${channels["+1"]}\`
+print \`Phase +2 (Tertiary Track):   \${channels["+2"]}\`
+print \`Phase -0 (Antisense Reverse): \${channels["-0"]}\`
+
+# 3. Dynamic Programmed Ribosomal Frameshifting (PRF)
+print "\\n--- Programmed Ribosomal Slipping (PRF) ---"
+let stress_level = 95
+
+if (stress_level > 90) {
+    slip(1) # Mechanically slips execution from Phase +0 into Phase +1!
+    print \`[SYSTEM] Cellular stress detected (\${stress_level}%). Execution slipped into Phase +\${current_phase} emergency track!\`
+}
+
+# 4. Thermodynamic Attenuator Pause Gate
+attenuator(threshold = 500) {
+    print "Attenuator Gate Active: Rate-limiting biological payload."
+}
+
+print "\\nHexaPhase execution completed with 100% biological fidelity!"
+halt`,
+
             python_bridge: `# =============================================================
 # SMC SAMPLE: Python Ecosystem Bridge (FFI)
 # =============================================================

@@ -186,6 +186,26 @@ class PyImportNode(AstNode):
 
 
 @dataclass
+class HexaPhaseNode(AstNode):
+    """HexaPhase multiplexed execution block."""
+    target_expr: AstNode
+    body: list[AstNode] = field(default_factory=list)
+
+
+@dataclass
+class SlipNode(AstNode):
+    """Programmed Ribosomal Frameshift slip instruction: slip(+1) or slip(-1)"""
+    by_expr: AstNode
+
+
+@dataclass
+class AttenuatorNode(AstNode):
+    """Thermodynamic pause/attenuation gate: attenuator(threshold) { ... }"""
+    threshold_expr: AstNode
+    body: list[AstNode] = field(default_factory=list)
+
+
+@dataclass
 class HaltNode(AstNode):
     pass
 
@@ -376,7 +396,7 @@ class SmcParser:
             return expr
 
         # Identifiers (variable name OR function call OR indexed access OR booleans)
-        if tok.token_type == TokenType.IDENTIFIER:
+        if tok.token_type in (TokenType.IDENTIFIER, TokenType.KEYWORD):
             val_lower = str(tok.value).lower()
             if val_lower == "true":
                 self._advance()
@@ -711,7 +731,58 @@ class SmcParser:
                 alias = str(alias_tok.value)
             return PyImportNode(module_name=mod_name, alias=alias)
 
-        # 18. HALT
+        # 18. HEXAPHASE: hexaphase <expr> { ... }
+        if self._match_opcode(Opcode.HEXAPHASE):
+            self._advance()
+            target_expr = self.parse_expression()
+            body_stmts = []
+            if self._peek().token_type == TokenType.LBRACE:
+                self._advance()
+                while self.pos < len(self.tokens) and self._peek().token_type != TokenType.RBRACE:
+                    s = self._parse_statement()
+                    if s:
+                        body_stmts.append(s)
+                if self._peek().token_type == TokenType.RBRACE:
+                    self._advance()
+            return HexaPhaseNode(target_expr=target_expr, body=body_stmts)
+
+        # 19. SLIP: slip(1) or slip(-1)
+        if self._match_opcode(Opcode.SLIP):
+            self._advance()
+            if self._peek().token_type == TokenType.LPAREN:
+                self._advance()
+                by_expr = self.parse_expression()
+                if self._peek().token_type == TokenType.RPAREN:
+                    self._advance()
+            else:
+                by_expr = self.parse_expression()
+            return SlipNode(by_expr=by_expr)
+
+        # 20. ATTENUATOR: attenuator(threshold) { ... }
+        if self._match_opcode(Opcode.ATTENUATOR):
+            self._advance()
+            thresh_expr = LiteralNode(value=100)
+            if self._peek().token_type == TokenType.LPAREN:
+                self._advance()
+                if str(self._peek().value).lower() in ("threshold", "limit", "delta_g"):
+                    self._advance()
+                    if self._peek().token_type == TokenType.EQUALS:
+                        self._advance()
+                thresh_expr = self.parse_expression()
+                if self._peek().token_type == TokenType.RPAREN:
+                    self._advance()
+            body_stmts = []
+            if self._peek().token_type == TokenType.LBRACE:
+                self._advance()
+                while self.pos < len(self.tokens) and self._peek().token_type != TokenType.RBRACE:
+                    s = self._parse_statement()
+                    if s:
+                        body_stmts.append(s)
+                if self._peek().token_type == TokenType.RBRACE:
+                    self._advance()
+            return AttenuatorNode(threshold_expr=thresh_expr, body=body_stmts)
+
+        # 21. HALT
         if self._match_opcode(Opcode.HALT):
             self._advance()
             return HaltNode()
@@ -722,24 +793,55 @@ class SmcParser:
 
 
 # ---------------------------------------------------------------------------
-# CatDog Multi-Frame Slicer
+# HexaPhase Multi-Frame Slicer (6-Phase Multiplexing)
 # ---------------------------------------------------------------------------
 
-class CatDogSlicer:
-    """Extracts dual independent routines from a single interleaved token buffer."""
+class HexaPhaseSlicer:
+    """Extracts 6 independent reading phases (+0, +1, +2, -0, -1, -2) from an interleaved token buffer."""
+
+    @staticmethod
+    def slice_phases(tokens: list[CanonicalToken]) -> dict[str, list[CanonicalToken]]:
+        """Slice tokens into 6 distinct forward and reverse multiplexed tracks."""
+        non_eof = tokens[:-1] if tokens and tokens[-1].token_type == TokenType.EOF else tokens
+        eof = tokens[-1] if tokens and tokens[-1].token_type == TokenType.EOF else CanonicalToken(TokenType.EOF, "", 0, 0)
+
+        phases: dict[str, list[CanonicalToken]] = {
+            "+0": [], "+1": [], "+2": [],
+            "-0": [], "-1": [], "-2": [],
+        }
+
+        # Forward tracks (+0, +1, +2)
+        for idx, tok in enumerate(non_eof):
+            p = f"+{idx % 3}"
+            phases[p].append(tok)
+
+        # Reverse complement / antisense tracks (-0, -1, -2)
+        reversed_toks = list(reversed(non_eof))
+        for idx, tok in enumerate(reversed_toks):
+            p = f"-{idx % 3}"
+            phases[p].append(tok)
+
+        # Append EOF to all tracks
+        for p in phases:
+            phases[p].append(eof)
+
+        return phases
 
     @staticmethod
     def slice_frames(tokens: list[CanonicalToken]) -> tuple[list[CanonicalToken], list[CanonicalToken]]:
+        """Backwards compatibility for dual CatDog frames (Even and Odd interleaved indices)."""
         cat_tokens = []
         dog_tokens = []
-
-        for idx, tok in enumerate(tokens[:-1]):  # exclude EOF
+        for idx, tok in enumerate(tokens[:-1]):
             if idx % 2 == 0:
                 cat_tokens.append(tok)
             else:
                 dog_tokens.append(tok)
-
         eof = tokens[-1]
         cat_tokens.append(eof)
         dog_tokens.append(eof)
         return cat_tokens, dog_tokens
+
+
+# Legacy Alias
+CatDogSlicer = HexaPhaseSlicer
