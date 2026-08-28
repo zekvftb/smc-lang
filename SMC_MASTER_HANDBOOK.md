@@ -42,7 +42,7 @@ reserved_token  = "." | ";" | "@" | "~" ;
 ### 1.2 Lexical & Case-Sensitivity Rules
 1. **Keyword Case-Insensitivity:** All canonical keywords and cartoon synonym tokens are matched case-insensitively (`LET`, `let`, `Let`, `SUGAR`, `sugar`).
 2. **Identifier Case-Sensitivity:** User-defined identifiers (variable names, function names, dictionary keys) are strictly **case-sensitive** (`blossom` $\neq$ `Blossom`).
-3. **Built-in Shadowing:** User-defined variables and function declarations within an active scope shadow standard built-in functions of the same name (e.g. declaring `let len = 5` shadows built-in `len()`).
+3. **Lexical Built-in Shadowing Scope:** User-defined variables and function declarations within an active scope shadow standard built-in functions of the same name (e.g. declaring `let len = 5` shadows built-in `len()`). Shadowing applies recursively to all child and nested scopes within the declaring frame, and the original built-in binding is automatically restored upon frame termination.
 4. **Reserved Symbols:** The dot (`.`), semicolon (`;`), at-sign (`@`), and tilde (`~`) tokens are reserved for future namespace and macro extensions. Subscript indexing `dict["key"]` is the canonical member access operator.
 5. **Whitespace & Comment Invariance:** Whitespace characters (`\x20`, `\t`, `\r`, `\n`) and comments (`#` to newline/EOF) are ignored and discarded by the lexer as delimiters, generating zero runtime tokens.
 
