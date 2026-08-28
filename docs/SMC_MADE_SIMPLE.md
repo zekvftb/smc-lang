@@ -1,46 +1,47 @@
-# 📺 SMC Made Simple: The Absolute Beginner's Guide to Saturday Morning Cartoons Programming
-**A Fun, Plain-English Guide to Writing Biological, Crash-Resistant Code**  
+# 📺 SMC Made Simple: A Friendly Beginner's Guide to Saturday Morning Programming
+**The Playful, Biological, Crash-Resistant Language for Everyone**  
 *Maintainer: Jason Rezek (`zekvftb@gmail.com`) — v0.7.0*
 
 ---
 
-## 🌟 Welcome to SMC!
+## 🥣 Welcome to Saturday Morning Code!
 
-If regular programming languages like C, Java, or Python feel like strict, grumpy math teachers who scream `SyntaxError` every time you miss a semicolon... **welcome home.**
+Remember pouring a giant bowl of sugary cereal in your pajamas on Saturday morning and watching animated heroes save the day? 
 
-**SMC (Saturday Morning Cartoons)** is a programming language built on two simple ideas:
-1. **DNA Never Crashes:** DNA has been running software inside living organisms for 3.8 billion years without a reboot. It uses clever biological tricks (synonyms, expiring messages, shape-matching) to ignore bugs and keep running.
-2. **Programming Should Be Fun:** We wrapped those biological superpowers inside the nostalgic universe of 90s cartoons—**Dexter’s Lab, The Powerpuff Girls, Captain Planet, Sailor Moon, and Looney Tunes**.
+**SMC (Saturday Morning Cartoons)** brings that same fun, vibrant energy into modern programming, powered by the incredible information engineering of **DNA and RNA**:
 
-Whether you're a complete novice who has never written a line of code in your life or a seasoned software engineer looking for a refreshing, fault-tolerant runtime, this guide is for you.
+1. **DNA Never Crashes:** Living systems have run software inside biology for 3.8 billion years without a reboot. Biology uses built-in synonyms, self-dissolving messages, and shape-matching locks to keep running even when errors happen.
+2. **Coding Should Be Joyful:** We paired those biological superpowers with subtle, nostalgic nods to 90s animation tropes—secret underground labs, magical transformations, falling anvils, and elemental summonings.
+
+Whether you are writing your very first script or building a real-world web application, this guide walks you through every step in plain English.
 
 ---
 
-## 🧭 Icons Used in This Guide
+## 🧭 Reader's Guide Icons
 
-* 💡 **Tip:** Helpful tricks to save time.
-* 🧠 **Remember:** Core concepts to keep in mind.
-* 🔬 **Technical Stuff:** What’s happening under the hood (skip if you just want to code!).
-* ⚠️ **Watch Out:** Traps and gotchas to avoid.
+* 💡 **Tip:** Handy shortcuts to make coding easier.
+* 🧠 **Remember:** Core principles worth remembering.
+* 🔬 **Under the Hood:** A peek at the biological computer science (feel free to skim!).
+* ⚠️ **Note:** Key details to keep in mind.
 
 ---
 
 ## 🚀 Chapter 1: The 30-Second Quickstart
 
-You don’t even need to install anything on your computer to start coding in SMC!
+You don't need complex compilers or heavy setups to start experimenting with SMC!
 
-### Option A: The Zero-Install Web Playground
-1. Open your browser and go to: **[https://zekvftb.github.io/smc-lang/](https://zekvftb.github.io/smc-lang/)**
+### Option A: The Live Web Playground (Zero Install)
+1. Open your browser to: **[https://zekvftb.github.io/smc-lang/](https://zekvftb.github.io/smc-lang/)**
 2. Click **"Run Code"**.
-3. You are now running SMC directly in your web browser!
+3. You are now running SMC directly inside your browser!
 
-### Option B: Install on Your PC (Windows, Mac, or Linux)
-If you have Python 3.11 or newer installed:
+### Option B: Local Command Line (PC / Mac / Linux)
+If you have Python 3.11+ installed:
 ```powershell
 pip install smc-lang
 ```
 
-Launch the interactive laboratory shell (the REPL):
+Launch the interactive lab shell:
 ```powershell
 smc repl
 ```
@@ -49,170 +50,164 @@ smc repl
 
 ## ✍️ Chapter 2: Writing Your First Program ("Hello Toon!")
 
-Every SMC program starts with an **`experiment`** name and ends with **`halt`** (or `THATS_ALL_FOLKS`):
+Every SMC program begins with an **`experiment`** declaration and concludes with **`halt`**:
 
 ```smc
-experiment "My_First_Toon"
+experiment "My_First_Adventure"
 
-# Output a friendly message to the screen
+# Output a message to the console
 print "Hello, Saturday Morning!"
 
-# Cleanly stop the program
+# Cleanly stop execution
 halt
 ```
 
 ### 🧠 Remember: Comments Start with `#`
-Any line starting with `#` is a **comment**. The computer ignores it—it's just a note for humans reading the code.
+Any line beginning with `#` is a **comment**. The computer ignores it—it is just a note for humans reading the code.
 
 ---
 
-## 🧪 Chapter 3: Variables (Storing Information in Dexter's Lab)
+## 🧪 Chapter 3: Variables (Storing Data in Your Lab)
 
-A **variable** is just a labeled box where you store numbers, text, or lists.
+A **variable** is a labeled container for holding numbers, text, or lists:
 
 ```smc
-experiment "Chemical_Variables"
+experiment "Laboratory_State"
 
-# Create some variables using 'let'
-let player_name = "Dexter"
-let player_level = 1
-let health_points = 100
-let has_magic_shield = true
+# Declare variables using 'let'
+let player_name = "Hero"
+let energy_level = 100
+let has_shield = true
 
-# Print them out
-print "Player: " + player_name
-print `Current HP: ${health_points}`
+# Print formatted messages with template strings
+print `Player: ${player_name}`
+print `Current Energy: ${energy_level}`
 
 halt
 ```
 
-### 💡 Tip: You Can Use Cartoon Synonyms!
-SMC understands that humans make typos and love fun keywords. All of these mean the exact same thing:
-* `let score = 10`
-* `set score = 10`
-* `var score = 10`
-* `SUGAR score = 10`
-* `SPICE score = 10`
-* `EVERYTHING_NICE score = 10`
+### 💡 Tip: Friendly Synonym Aliases
+SMC recognizes that programmers appreciate flexible, expressive keywords. You can use standard keywords or playful lab synonyms interchangeably:
+* `let speed = 10`
+* `set speed = 10`
+* `var speed = 10`
+* `SUGAR speed = 10`
+* `SPICE speed = 10`
 
 ---
 
-## 🦸 Chapter 4: The 5 Cartoon Superpowers
+## 🦸 Chapter 4: The 5 Biological Cartoon Superpowers
 
-Here is where SMC does things no other programming language can do!
+Here is where SMC does things traditional languages cannot!
 
 ### 💥 Superpower 1: Typo-Tolerance (Wobble Codon Repair)
-* **The Problem:** In Python or C, if you accidentally type `prnt "hi"` or `whle (x < 5)`, your program immediately crashes with a `SyntaxError`.
-* **The SMC Solution:** Just like DNA tolerates small mutations in genetic codons, SMC's compiler uses **Wobble Tolerance**. It automatically fixes minor typos without stopping:
+* **The Problem:** In rigid languages, a single misspelled keyword (`prnt` instead of `print`) crashes the program immediately.
+* **The Biological Fix:** Just as ribosomes tolerate small genetic wobble mutations in DNA codons, the SMC compiler automatically repairs minor typing slips without halting:
 
 ```smc
-experiment "Typo_Magic"
+experiment "Wobble_Repair_Demo"
 
-# Notice the typos? 'prnt' and 'ltt' still work!
-let score = 50
-prnt `Your score is: ${score}`
+let power = 50
+# Notice the minor slip? 'prnt' is smoothly repaired!
+prnt `Power output: ${power}`
 
 halt
 ```
 
 ---
 
-### 📦 Superpower 2: Acme Anvil Ephemeral Memory (Self-Destructing RAM)
-* **The Problem:** In regular languages, if you create thousands of temporary variables (like session tokens or cache items), they sit in RAM forever until a "Garbage Collector" freezes your CPU to clean them up.
-* **The SMC Solution:** In biology, mRNA transcripts naturally dissolve after a few minutes. In SMC, you can attach an **Acme Anvil** with a Time-To-Live (`ttl=N`):
+### 📦 Superpower 2: The Anvil Ephemeral Memory (Self-Cleaning RAM)
+* **The Problem:** Temporary items like session tokens clutter memory until a heavy garbage collector pauses the CPU to clean them up.
+* **The Biological Fix:** In cells, messenger RNA naturally dissolves after being read. In SMC, you can attach an ephemeral timer (`ttl=N` steps):
 
 ```smc
-experiment "Acme_Demo"
+experiment "Ephemeral_Memory"
 
-let persistent_player = "Dexter"
+let permanent_user = "Lead_Scientist"
 
-# This variable will ONLY live for 2 execution steps!
-acme(ttl=2) temporary_passcode = "SECRET_999"
+# This variable will only live for 2 execution cycles!
+acme(ttl=2) one_time_passcode = "TEMP_98234"
 
-print `Active Passcode: ${temporary_passcode}`
-print "Step 1: Doing some work..."
-print "Step 2: Doing more work..."
+print `Active Passcode: ${one_time_passcode}`
+print "Cycle 1: Working..."
+print "Cycle 2: Working..."
 
-# *ANVIL DROPS* -> temporary_passcode auto-vaporizes from RAM with zero memory leaks!
+# The temporary passcode gently vaporizes from RAM with zero memory leaks!
 halt
 ```
 
 ---
 
-### 🌙 Superpower 3: Sailor Moon Transformations (`mpp`)
-* **The Concept:** In biology, a stem cell transforms into a bone cell or heart cell. In Sailor Moon, Usagi shouts *"Moon Prism Power!"* to evolve into Sailor Moon.
-* **In SMC:** Use the **`mpp`** (Moon Prism Power) keyword to evolve state:
+### 🌙 Superpower 3: Magical State Evolution (`mpp`)
+* **The Concept:** Cells differentiate from stem cells into specialized tissues. In animated lore, characters undergo dramatic transformations to evolve their abilities.
+* **In SMC:** Use the **`mpp`** (Magical Power Progression) block to evolve state:
 
 ```smc
-experiment "Transformation_Demo"
+experiment "Evolution_Demo"
 
-let hero = "Usagi"
+let hero_status = "Apprentice"
 
-# Evolve the hero into Princess Serenity!
-mpp hero = "Princess_Serenity" {
-    print "State transformed to royal tier!"
+# Evolve the hero into a Champion!
+mpp hero_status = "Champion" {
+    print "State evolved to elite tier!"
 }
 
-print `Current Hero Status: ${hero}`
-
+print `Status: ${hero_status}`
 halt
 ```
 
 ---
 
-### 💍 Superpower 4: Captain Planet Ring Dispatch (No IP Addresses Needed!)
-* **The Problem:** In standard coding, you have to remember complex function pointers (`0x7FFF`) or hard-coded URLs.
-* **The SMC Solution:** Functions bind to **elemental rings** (`EARTH`, `FIRE`, `WIND`, `WATER`, `HEART`). Anyone can shout an element to trigger the matching power:
+### 💍 Superpower 4: Elemental Ring Dispatch (Shape-Matching Routing)
+* **The Problem:** Traditional programming relies on fragile memory addresses and hardcoded URLs.
+* **The Biological Fix:** Proteins find targets through physical lock-and-key shapes. In SMC, routines bind to elemental rings (`EARTH`, `FIRE`, `WIND`, `WATER`, `HEART`):
 
 ```smc
-experiment "Planeteers_Assemble"
+experiment "Elemental_Rings"
 
-# 1. Teach the computer what happens when 'FIRE' is called
+# 1. Bind routines to elemental shapes
 bind(ring="FIRE") {
-    print "Wheeler shoots a burst of fire!"
+    print "Flame burst activated!"
 }
-
-# 2. Teach the computer what happens when 'WIND' is called
 bind(ring="WIND") {
-    print "Linka summons a whirlwind!"
+    print "Whirlwind vortex engaged!"
 }
 
-# 3. Trigger them by name! (Case doesn't even matter)
+# 2. Dispatch events by shape name (case-coerced automatically)
 dispatch "fire"
 dispatch "wind"
 
 halt
 ```
 
-### 🌹 Tuxedo Mask Fallback Checkpoint
-What if someone dispatches an element that hasn't been created yet? Instead of crashing, **Tuxedo Mask** gracefully steps in:
-
+### 🌹 The Tuxedo Watchdog Fallback
+If code dispatches to an unbound ring, the fallback checkpoint gracefully catches it:
 ```smc
 fallback {
-    print "Tuxedo Mask throws a red rose! (Graceful backup executed)"
+    print "A mysterious ally steps in! (Graceful backup executed)"
 }
 
-# This ring doesn't exist, but Tuxedo Mask catches it!
-dispatch "UNKNOWN_PLANET"
+# Unbound ring is caught safely without crashing!
+dispatch "UNKNOWN_ELEMENT"
 ```
 
 ---
 
 ### 🧬 Superpower 5: HexaPhase 6-Track Multiplexing
-* **The Biological Principle:** DNA encodes multiple genes on overlapping reading tracks (+0, +1, +2, -0, -1, -2).
-* **In SMC:** You can slice a single string of data into 6 independent channels at the exact same time:
+* **The Biological Principle:** Viral genomes pack multiple overlapping genes onto 6 reading phases within the same sequence.
+* **In SMC:** You can multiplex any stream into 6 concurrent channels:
 
 ```smc
-experiment "HexaPhase_Demo"
+experiment "HexaPhase_Channels"
 
-# Slices the sequence across all 6 reading phases
+# Slices the sequence across all 6 reading phases (+0, +1, +2, -0, -1, -2)
 hexaphase "ATGCGATCGATC" {
-    let forward_track_0 = hexaphase_channels["+0"]
-    let forward_track_1 = hexaphase_channels["+1"]
-    let reverse_track_0 = hexaphase_channels["-0"]
+    let track_0 = hexaphase_channels["+0"]
+    let track_1 = hexaphase_channels["+1"]
+    let reverse_0 = hexaphase_channels["-0"]
 
-    print `Forward 0: ${forward_track_0}`
-    print `Forward 1: ${forward_track_1}`
+    print `Forward Track 0: ${track_0}`
+    print `Forward Track 1: ${track_1}`
 }
 
 halt
@@ -222,60 +217,59 @@ halt
 
 ## 🛠️ Chapter 5: Collections (Lists & Dictionaries)
 
-### Lists (Arrays of Items)
-Lists hold multiple items in order (starting at index 0):
+### Lists (Ordered Sequences)
+Lists store multiple items in order (0-indexed, with safe negative indexing from the end):
 ```smc
-let cartoons = ["Dexter", "Powerpuff Girls", "Johnny Bravo", "Courage"]
+let squad = ["Leader", "Technician", "Pilot", "Scout"]
 
-print cartoons[0]   # "Dexter"
-print cartoons[1]   # "Powerpuff Girls"
-print cartoons[-1]  # "Courage" (negative index grabs from the end!)
+print squad[0]   # "Leader"
+print squad[-1]  # "Scout" (grabs the last item)
 ```
 
-### Dictionaries (Key-Value Pairs)
-Dictionaries let you store information with descriptive keys:
+### Dictionaries (Key-Value Records)
+Dictionaries store data with descriptive property labels:
 ```smc
-let hero_stats = {
-    "name": "Buttercup",
-    "power": 900,
-    "speed": 750
+let bot = {
+    "name": "Sparky",
+    "battery": 100,
+    "speed": 85
 }
 
-print hero_stats["name"]    # "Buttercup"
-hero_stats["power"] += 50   # Boost power to 950!
+print bot["name"]     # "Sparky"
+bot["battery"] -= 15  # Compound update to 85
 ```
 
 ---
 
-## 🔁 Chapter 6: Control Flow (Loops & If/Else)
+## 🔁 Chapter 6: Control Flow (Decisions & Loops)
 
-### If / Else Decisions
+### If / Else Conditions
 ```smc
-let enemy_hp = 0
+let shield_integrity = 25
 
-if (enemy_hp <= 0) {
-    print "Victory! The villain was defeated!"
+if (shield_integrity > 50) {
+    print "Defenses holding strong."
 } else {
-    print "Keep fighting!"
+    print "Shield energy critical!"
 }
 ```
 
-### While Loops (Repeating Until Done)
+### While Loops (Countdown Timers)
 ```smc
-let count = 1
-while (count <= 3) {
-    print `Countdown: ${count}`
-    count += 1
+let timer = 3
+while (timer > 0) {
+    print `Launch in: ${timer}`
+    timer -= 1
 }
-print "Blast off!"
+print "Liftoff!"
 ```
 
-### For-In Loops (Iterating Over Lists)
+### For-In Loops (Iterating Collections)
 ```smc
-let ingredients = ["Sugar", "Spice", "Chemical X"]
+let supplies = ["Energy Cell", "Scanner", "Toolkit"]
 
-for item in ingredients {
-    print "Adding: " + item
+for item in supplies {
+    print "Equipped: " + item
 }
 ```
 
@@ -283,63 +277,63 @@ for item in ingredients {
 
 ## 🌐 Chapter 7: Mini-Project: A 10-Line Web Server!
 
-SMC comes with a built-in web server! You can launch a real HTTP website in seconds:
+SMC includes a native HTTP server engine so you can spin up responsive web applications in seconds:
 
 ```smc
-experiment "My_First_Website"
+experiment "Mini_Web_Service"
 
-fn my_web_handler(req) {
+fn route_handler(req) {
     let path = req["path"]
-    
-    if (path == "/about") {
-        return "<h1>About Dexter's Secret Lab</h1><p>Built with 100% SMC code!</p>"
+
+    if (path == "/status") {
+        return "<h1>Lab Status: 100% Optimal</h1><p>Running on SMC v0.7.0</p>"
     }
-    
-    return "<h1>Welcome to Saturday Morning Cartoons!</h1><a href='/about'>Go to About</a>"
+
+    return "<h1>Welcome to the Secret Lab!</h1><a href='/status'>Check Status</a>"
 }
 
-# Start listening on port 8080!
-print "Visit http://localhost:8080 in your browser!"
-serve_http(8080, "my_web_handler")
+# Start server listening on port 8080
+print "Lab Web Server listening on http://localhost:8080"
+serve_http(8080, "route_handler")
 
 halt
 ```
 
 ---
 
-## 📋 Chapter 8: The SMC Cheat Sheet
+## 📋 Chapter 8: The SMC Quick Reference Card
 
 | Task | How to write it in SMC |
 | :--- | :--- |
-| **Start a program** | `experiment "Name"` |
-| **End a program** | `halt` |
-| **Create a variable** | `let x = 10` (or `SUGAR x = 10`) |
+| **Start program** | `experiment "Name"` |
+| **End program** | `halt` |
+| **Declare variable** | `let x = 10` (or `SUGAR x = 10`) |
 | **Self-destruct variable** | `acme(ttl=3) temp = "Value"` |
-| **Print to screen** | `print "Hello"` (or `KAMEHAMEHA "Hello"`) |
-| **Format a template string** | `` `Score: ${points}` `` |
-| **Make a function** | `fn add(a, b) { return a + b }` |
-| **Make a list** | `let items = [1, 2, 3]` |
-| **Make a dictionary** | `let user = { "name": "Dexter", "age": 10 }` |
+| **Print text** | `print "Hello"` |
+| **Template string** | `` `Value: ${val}` `` |
+| **Define function** | `fn add(a, b) { return a + b }` |
+| **Create list** | `let items = [1, 2, 3]` |
+| **Create dictionary** | `let user = { "name": "Alex", "level": 5 }` |
 | **If / Else** | `if (x > 5) { ... } else { ... }` |
-| **Loop over a list** | `for item in items { print item }` |
-| **Planeteer Ring Dispatch** | `bind(ring="FIRE") { ... }` followed by `dispatch "FIRE"` |
-| **HexaPhase 6-Track Slice**| `hexaphase "ATGC" { let f0 = hexaphase_channels["+0"] }` |
+| **Loop list** | `for item in items { print item }` |
+| **Elemental Ring Dispatch** | `bind(ring="FIRE") { ... }` followed by `dispatch "FIRE"` |
+| **HexaPhase 6-Track Slicing**| `hexaphase "STREAM" { let p0 = hexaphase_channels["+0"] }` |
 | **Call Python Code** | `let root = py_call("math.sqrt", 64)` |
 
 ---
 
-## 🏆 The Top 10 Rules of SMC
-1. **Case-Insensitive Keywords:** `LET`, `let`, and `Let` all work identically.
-2. **Case-Sensitive Variables:** `speed` and `Speed` are two different variables.
-3. **No Semicolons Required:** Just hit Enter and keep typing.
-4. **Zero-Crash Division:** `10 / 0` evaluates safely to `0` with a warning instead of crashing.
-5. **Zero-Crash Missing Variables:** Reading an unassigned variable gives you `0` or `""` safely.
-6. **Negative List Indexing:** `list[-1]` grabs the last element.
-7. **Acme TTL Cleanups:** Ephemeral memory cleans itself up without Garbage Collector freezes.
-8. **Shape-Matching Routing:** Use `bind` and `dispatch` instead of hard-coded memory pointers.
-9. **Zero Dependencies:** SMC runs completely standalone with 0 external packages.
-10. **Have Fun!** Saturday Morning Cartoons is designed to put the joy back into programming!
+## 🏆 The 10 Golden Guidelines of SMC
+1. **Case-Insensitive Keywords:** `LET`, `let`, and `Let` are identical.
+2. **Case-Sensitive Identifiers:** `power` and `Power` are distinct variable names.
+3. **No Semicolon Traps:** Freeform formatting without semicolon syntax crashes.
+4. **Zero-Crash Arithmetic:** `10 / 0` evaluates safely to `0` with a diagnostic warning.
+5. **Zero-Crash Lookups:** Reading unassigned variables yields `0` or `""` safely.
+6. **Negative List Indexing:** `items[-1]` grabs the final element.
+7. **Self-Cleaning RAM:** Ephemeral variables dissolve on TTL expiration without CPU pauses.
+8. **Shape-Based Routing:** Dispatch by categorical shape instead of brittle pointers.
+9. **Zero Dependencies:** Runs standalone on any standard computer with 0 extra packages.
+10. **Joyful Productivity:** Saturday Morning Cartoons makes software development fun again!
 
 ---
 
-*Igu.aa yáx x'wán — Have courage, stand strong, and happy hacking!*
+*Igu.aa yáx x'wán — Have courage, stand strong, and happy coding!*
