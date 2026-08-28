@@ -18,10 +18,11 @@ from smc.tokens import (
 
 
 class SmcLexer:
-    """Tokenizes SMC source code with codon wobble tolerancing."""
+    """Tokenizes SMC source code with codon wobble tolerancing and optional strict mode."""
 
-    def __init__(self, source_text: str) -> None:
+    def __init__(self, source_text: str, strict: bool = False) -> None:
         self.source = source_text
+        self.strict = strict
         self.pos = 0
         self.line = 1
         self.col = 1
@@ -231,32 +232,60 @@ class SmcLexer:
                 elif ident_lower == "or":
                     tokens.append(CanonicalToken(TokenType.OR, "or", start_line, start_col))
                 else:
-                    # Attempt wobble opcode resolution
-                    resolved_op = resolve_wobble_opcode(ident_str, max_distance=2)
-                    if resolved_op:
-                        was_mut = (ident_str.upper() not in KEYWORD_TO_OPCODE)
-                        tokens.append(
-                            CanonicalToken(
-                                token_type=TokenType.KEYWORD,
-                                value=ident_str,
-                                line=start_line,
-                                column=start_col,
-                                resolved_opcode=resolved_op,
-                                was_mutated=was_mut,
-                                original_text=ident_str,
+                    if self.strict:
+                        # Strict Mode: Exact keyword matching only, no Levenshtein fuzzy repairs
+                        resolved_op = KEYWORD_TO_OPCODE.get(ident_str.upper())
+                        if resolved_op:
+                            tokens.append(
+                                CanonicalToken(
+                                    token_type=TokenType.KEYWORD,
+                                    value=ident_str,
+                                    line=start_line,
+                                    column=start_col,
+                                    resolved_opcode=resolved_op,
+                                    was_mutated=False,
+                                    original_text=ident_str,
+                                )
                             )
-                        )
+                        else:
+                            tokens.append(
+                                CanonicalToken(
+                                    token_type=TokenType.IDENTIFIER,
+                                    value=ident_str,
+                                    line=start_line,
+                                    column=start_col,
+                                    original_text=ident_str,
+                                )
+                            )
                     else:
-                        tokens.append(
-                            CanonicalToken(
-                                token_type=TokenType.IDENTIFIER,
-                                value=ident_str,
-                                line=start_line,
-                                column=start_col,
-                                original_text=ident_str,
+                        # Fault-Tolerant Mode: Codon wobble resolution
+                        resolved_op = resolve_wobble_opcode(ident_str, max_distance=2)
+                        if resolved_op:
+                            was_mut = (ident_str.upper() not in KEYWORD_TO_OPCODE)
+                            tokens.append(
+                                CanonicalToken(
+                                    token_type=TokenType.KEYWORD,
+                                    value=ident_str,
+                                    line=start_line,
+                                    column=start_col,
+                                    resolved_opcode=resolved_op,
+                                    was_mutated=was_mut,
+                                    original_text=ident_str,
+                                )
                             )
-                        )
+                        else:
+                            tokens.append(
+                                CanonicalToken(
+                                    token_type=TokenType.IDENTIFIER,
+                                    value=ident_str,
+                                    line=start_line,
+                                    column=start_col,
+                                    original_text=ident_str,
+                                )
+                            )
             else:
+                if self.strict:
+                    raise SyntaxError(f"[STRICT_SYNTAX_ERROR] Unexpected character '{ch}' at line {start_line}:{start_col}")
                 # Unknown character, advance gracefully (biological neutral mutation)
                 self._advance()
 

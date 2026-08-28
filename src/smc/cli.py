@@ -14,37 +14,84 @@ import argparse
 from pathlib import Path
 import sys
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
 from smc.lexer import SmcLexer
 from smc.parser import CatDogSlicer, SmcParser
 from smc.repl import start_repl
+from smc.bytecode_vm import BytecodeVM, disassemble_chunk
+from smc.compiler import BytecodeCompiler
 from smc.vm import DexterVM
 
 
-def run_file(file_path: Path | str) -> None:
+def run_file(file_path: Path | str, strict: bool = False, use_bytecode: bool = False) -> None:
     path = Path(file_path)
     if not path.is_file():
         print(f"Error: File not found at '{path}'")
         sys.exit(1)
 
     source = path.read_text(encoding="utf-8")
-    lexer = SmcLexer(source)
-    tokens = lexer.tokenize()
+    try:
+        lexer = SmcLexer(source, strict=strict)
+        tokens = lexer.tokenize()
+    except SyntaxError as e:
+        print(f"[SYNTAX ERROR] {e}")
+        sys.exit(1)
 
     parser = SmcParser(tokens)
     ast = parser.parse()
 
-    vm = DexterVM()
-    vm.current_file = path.resolve()
-    res = vm.run(ast)
+    if use_bytecode:
+        compiler = BytecodeCompiler()
+        chunk = compiler.compile(ast)
+        b_vm = BytecodeVM()
+        res = b_vm.run(chunk)
 
-    print("\n--- DEXTER_VM EXECUTION OUTPUT ---")
-    for line in res["stdout"]:
-        try:
-            print(line)
-        except UnicodeEncodeError:
-            print(line.encode(sys.stdout.encoding or "utf-8", errors="replace").decode(sys.stdout.encoding or "utf-8"))
-    print("----------------------------------\n")
-    print(f"Steps: {res['execution_steps']} | Anvils Dropped: {res['anvils_dropped']} | Mutations Survived: {res['mutations_survived']}")
+        print("\n--- BYTECODE_VM (FAST STACK) OUTPUT ---")
+        for line in res["stdout"]:
+            try:
+                print(line)
+            except UnicodeEncodeError:
+                print(line.encode(sys.stdout.encoding or "utf-8", errors="replace").decode(sys.stdout.encoding or "utf-8"))
+        print("---------------------------------------\n")
+        print(f"Instructions Executed: {res['instructions_executed']:,} | Mode: Linear Bytecode Stack VM")
+    else:
+        vm = DexterVM()
+        vm.current_file = path.resolve()
+        res = vm.run(ast)
+
+        print("\n--- DEXTER_VM (AST RUNNER) OUTPUT ---")
+        for line in res["stdout"]:
+            try:
+                print(line)
+            except UnicodeEncodeError:
+                print(line.encode(sys.stdout.encoding or "utf-8", errors="replace").decode(sys.stdout.encoding or "utf-8"))
+        print("-------------------------------------\n")
+        print(f"Steps: {res['execution_steps']} | Anvils Dropped: {res['anvils_dropped']} | Mutations Survived: {res['mutations_survived']}")
+
+
+def disassemble_file(file_path: Path | str, strict: bool = False) -> None:
+    path = Path(file_path)
+    if not path.is_file():
+        print(f"Error: File not found at '{path}'")
+        sys.exit(1)
+
+    source = path.read_text(encoding="utf-8")
+    try:
+        lexer = SmcLexer(source, strict=strict)
+        tokens = lexer.tokenize()
+    except SyntaxError as e:
+        print(f"[SYNTAX ERROR] {e}")
+        sys.exit(1)
+
+    parser = SmcParser(tokens)
+    ast = parser.parse()
+
+    compiler = BytecodeCompiler()
+    chunk = compiler.compile(ast)
+    dis_str = disassemble_chunk(chunk, f"DISASSEMBLY: {path.name}")
+    print("\n" + dis_str + "\n")
 
 
 def run_catdog(file_path: Path | str) -> None:
@@ -315,6 +362,13 @@ def main() -> None:
     # run command
     run_parser = subparsers.add_parser("run", help="Execute an SMC script")
     run_parser.add_argument("file", type=str, help="Path to .smc file")
+    run_parser.add_argument("--strict", action="store_true", help="Enforce exact keyword matching with zero fuzzy repairs")
+    run_parser.add_argument("-b", "--bytecode", action="store_true", help="Execute using fast linear Bytecode Stack VM")
+
+    # dis command (disassemble bytecode)
+    dis_parser = subparsers.add_parser("dis", help="Disassemble an SMC script into linear VM bytecode")
+    dis_parser.add_argument("file", type=str, help="Path to .smc file")
+    dis_parser.add_argument("--strict", action="store_true", help="Enforce exact keyword matching")
 
     # debug command
     debug_parser = subparsers.add_parser("debug", help="Step-debug an SMC script interactively")
@@ -335,7 +389,9 @@ def main() -> None:
     elif args.command == "init":
         init_project(args.name)
     elif args.command == "run":
-        run_file(args.file)
+        run_file(args.file, strict=args.strict, use_bytecode=args.bytecode)
+    elif args.command == "dis":
+        disassemble_file(args.file, strict=args.strict)
     elif args.command == "debug":
         debug_file(args.file)
     elif args.command == "catdog":
