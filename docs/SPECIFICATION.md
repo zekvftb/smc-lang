@@ -11,6 +11,8 @@
 
 ### 1.1 Lexical Grammar
 ```ebnf
+whitespace      = " " | "\t" | "\r" | "\n" ;
+comment         = "#" , { ? any character except newline ? } , ( "\n" | ? EOF ? ) ;
 letter          = "A" | ... | "Z" | "a" | ... | "z" | "_" ;
 digit           = "0" | ... | "9" ;
 identifier      = letter , { letter | digit } ;
@@ -32,7 +34,14 @@ template_lit    = "`" , { template_char } , "`" ;
 boolean_lit     = "true" | "false" ;
 null_lit        = "null" ;
 literal         = number_lit | string_lit | template_lit | boolean_lit | null_lit ;
+reserved_token  = "." | ";" | "@" | "~" ;
 ```
+
+### 1.2 Lexical & Case-Sensitivity Rules
+1. **Keyword Case-Insensitivity:** All canonical keywords and cartoon synonym tokens are matched case-insensitively (`LET`, `let`, `Let`, `SUGAR`, `sugar`).
+2. **Identifier Case-Sensitivity:** User-defined identifiers (variable names, function names, dictionary keys) are strictly **case-sensitive** (`blossom` $\neq$ `Blossom`).
+3. **Built-in Shadowing:** User-defined variables and function declarations within an active scope shadow standard built-in functions of the same name (e.g. declaring `let len = 5` shadows built-in `len()`).
+4. **Reserved Symbols:** The dot (`.`), semicolon (`;`), at-sign (`@`), and tilde (`~`) tokens are reserved for future namespace and macro extensions. Subscript indexing `dict["key"]` is the canonical member access operator.
 
 ### 1.2 Expression Grammar (Uniform Postfix Pratt Hierarchy)
 ```ebnf
