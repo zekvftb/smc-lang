@@ -183,7 +183,9 @@ SMC enforces an 8-level Pratt parsing hierarchy. Subscript indexing (`[]`) and f
 | **1** | `&&`, `and` | Logical Conjunction (Short-circuiting) | Left-to-right | `a > 0 && b < 10` |
 | **0 (Lowest)** | `\|\|`, `or` | Logical Disjunction (Short-circuiting) | Left-to-right | `x == 0 \|\| x == width - 1` |
 
-*(Note: In SMC v0.7.0, all object and associative container access is performed via index subscription `obj["field"]`. The dot `.` token is reserved for future grammar versions).*
+### 3.1 Operator Semantics & Fault Tolerance
+* **Arithmetic Fault Invariance:** Division by zero (`a / 0`) and modulo by zero (`a % 0`) deterministically evaluate to numeric `0` and emit a diagnostic warning to stdout without raising unhandled runtime termination exceptions.
+* **Canonical Subscript Access:** In SMC v0.7.0, all object and associative container access is performed via index subscription `obj["field"]`. The dot `.` token is reserved for future grammar versions.
 
 ---
 
@@ -247,9 +249,6 @@ SMC enforces an 8-level Pratt parsing hierarchy. Subscript indexing (`[]`) and f
   Thus `bind(ring="fire")` and `dispatch "FIRE"` match identically.
 * **Watchdog Execution:** If `dispatch` targets an unmapped ring key, the runtime executes the registered `fallback` block (Tuxedo Mask Watchdog). If no fallback is registered, execution proceeds without raising errors.
 
-### 5.7 Lexical & Compatibility Notes (Legacy CatDog Framing)
-* **Legacy Dual-Frame Mode (`catdog`):** For backward compatibility with SMC v0.1.0 dual-frame source files, the `smc catdog <file>.smc` CLI command decomposes the token stream into alternating even (Cat track, Phase +0) and odd (Dog track, Phase +1) subroutines, executing both sequentially.
-
 ---
 
 ## 6. Execution Modalities & Tooling Reference
@@ -271,6 +270,8 @@ smc run path/to/program.smc
 smc repl
 
 # 3. Execute dual-frame overlapping bytecode (CatDog mode)
+# Note: CatDog execution is a CLI tokenizer transformation mode (alternating even/odd tokens),
+# not a standalone language opcode keyword.
 smc catdog path/to/dual_track.smc
 
 # 4. Inspect token stream and automated typo repairs
