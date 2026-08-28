@@ -200,20 +200,39 @@ Includes a **Virtual Web Browser** inspector where you can click `GET /`, `GET /
 
 ---
 
+## 🛠️ Instant Project Scaffolding (`smc init`)
+
+Create a full-stack, modular project in one command:
+
+```powershell
+smc init my_web_app
+cd my_web_app
+smc run main.smc
+```
+
+Generates a clean project structure with web routes, imported modules, static HTML assets, and documentation.
+
+---
+
 ## 🧪 Automated Testing
 Run the comprehensive test suite:
 ```powershell
 python -m pytest D:\smc_lang\tests/
 ```
-**All 37 tests pass in 6.8 seconds (including live HTTP socket tests and modular imports)!**
+**All 38 tests pass in 6.7 seconds (including live HTTP socket tests, project scaffolding, and modular imports)!**
 
 ---
 
-## 🎨 VS Code Syntax Highlighting Extension
+## 🎨 VS Code Syntax Highlighting Extension (`.vsix`)
 
 SMC includes an official VS Code extension for full syntax coloring!
 
-To install it:
+### ⚡ 1-Click Install with `.vsix`:
+```powershell
+code --install-extension editors/vscode/smc-lang-0.5.1.vsix
+```
+
+Or copy the extension folder manually:
 ```powershell
 Copy-Item -Recurse D:\smc_lang\editors\vscode "$HOME\.vscode\extensions\smc-lang"
 ```
