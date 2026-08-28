@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMC Web Playground — Biologically Inspired Programming Language</title>
+    <link rel="stylesheet" href="playground.css">
+</head>
+<body>
+    <header>
+        <div class="logo-group">
+            <span class="logo-badge">SMC</span>
+            <h2>Saturday Morning Cartoons</h2>
+            <span class="badge badge-cyan">v0.2.0</span>
+            <span class="badge badge-green">In-Browser VM</span>
+        </div>
+        <div class="header-links">
+            <a href="https://pypi.org/project/smc-lang/" target="_blank">📦 PyPI Release</a>
+            <a href="https://github.com/zekvftb/smc-lang" target="_blank">⭐ GitHub Repo</a>
+            <a href="https://github.com/zekvftb/smc-lang/blob/main/LICENSE" target="_blank">⚖️ Fair-Source License</a>
+        </div>
+    </header>
+
+    <div class="control-bar">
+        <label for="sample-select" style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted);">Lab Presets:</label>
+        <select id="sample-select">
+            <option value="rpg">Townsville RPG Battle (Dicts, Loops, Buffs)</option>
+            <option value="sailor">Sailor Moon Battle (Watchdog, Transformations)</option>
+            <option value="catdog">CatDog Multi-Framing (2 Programs in 1 Line)</option>
+            <option value="acme">Acme Anvil TTL (mRNA Memory Decay)</option>
+            <option value="hello">Hello Toon World (Minimal)</option>
+        </select>
+
+        <button id="btn-run" class="btn-primary">▶ Run Experiment</button>
+        <button id="btn-cat" class="btn-cat">🐱 Run Cat Frame (+0)</button>
+        <button id="btn-dog" class="btn-dog">🐶 Run Dog Frame (+1)</button>
+        <button id="btn-clear">🧹 Clear Terminal</button>
+    </div>
+
+    <main>
+        <!-- Editor Panel -->
+        <section class="panel">
+            <div class="panel-header">
+                <span>LABORATORY CODE EDITOR (.smc)</span>
+                <span id="editor-status" style="color: var(--accent-green);">Ready</span>
+            </div>
+            <div class="editor-container">
+                <textarea id="code-editor" spellcheck="false"></textarea>
+            </div>
+        </section>
+
+        <!-- Terminal Output -->
+        <section class="panel">
+            <div class="panel-header">
+                <span>DEXTER_VM VIRTUAL TERMINAL</span>
+                <span id="terminal-stats">Steps: 0 | Anvils Dropped: 0</span>
+            </div>
+            <div id="terminal-output"></div>
+        </section>
+
+        <!-- Inspector Panel -->
+        <section class="panel" style="border-right: none;">
+            <div class="panel-header">
+                <span>LIVE CELL MEMORY</span>
+                <span>Active State</span>
+            </div>
+            <div class="inspector-body">
+                <div class="inspector-section">
+                    <div class="inspector-title">Acme Anvil TTL Memory</div>
+                    <div id="ttl-inspector"><span style="color: var(--text-muted);">None active</span></div>
+                </div>
+
+                <div class="inspector-section">
+                    <div class="inspector-title">Persistent Variables</div>
+                    <div id="var-inspector"><span style="color: var(--text-muted);">None active</span></div>
+                </div>
+
+                <div class="inspector-section">
+                    <div class="inspector-title">Registered Functions</div>
+                    <div id="fn-inspector"><span style="color: var(--text-muted);">None active</span></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="playground.js"></script>
+    <script>
+        const PRESETS = {
+            rpg: `# =============================================================
+# SMC SAMPLE: Power RPG Battle Simulator
+# =============================================================
+experiment "Townsville_RPG_Showdown"
+
+# 1. Define character dictionary
+let player = {
+    "name": "Blossom",
+    "hp": 120,
+    "attack": 25,
+    "inventory": ["Ice_Breath_Scroll", "Chemical_X_Vial"]
+}
+
+let villain = {
+    "name": "Mojo_Jojo",
+    "hp": 150,
+    "attack": 20
+}
+
+print "--- Battle Commencing ---"
+print "Hero: " + player["name"]
+print "Villain: " + villain["name"]
+
+# 2. Add an item using built-in push()
+push(player["inventory"], "Super_Shield")
+print "Inventory count: " + str(len(player["inventory"]))
+
+# 3. For-in loop through equipment
+print "Equipment ready:"
+for item in player["inventory"] {
+    print "  - " + item
+}
+
+# 4. Turn combat with Acme TTL buff
+fn execute_attack(attacker_name, base_dmg) {
+    # Acme ephemeral critical-strike buff (auto-expires in 2 cycles)
+    acme(ttl=2) crit_boost = 10
+    let total_dmg = base_dmg + crit_boost
+    print attacker_name + " strikes with power: " + str(total_dmg)
+    return total_dmg
+}
+
+let dmg = execute_attack(player["name"], player["attack"])
+villain["hp"] -= dmg
+print "Mojo Jojo HP remaining: " + str(villain["hp"])
+
+# Turn 2: Retaliation
+player["hp"] -= villain["attack"]
+print "Blossom HP remaining: " + str(player["hp"])
+
+# Turn 3: Consume inventory item
+let used_item = pop(player["inventory"])
+print "Blossom consumes: " + used_item
+player["hp"] += 50
+print "Blossom HP recovered to: " + str(player["hp"])
+
+print "Battle phase completed successfully!"
+halt`,
+
+            sailor: `# =============================================================
+# SMC SAMPLE: Sailor Moon Battle & Planetary Defense
+# =============================================================
+experiment "Sailor_Moon_Battle_Simulator"
+
+let enemy_hp = 100
+let attack_power = (15 * 2) - 5
+let turn_count = 0
+
+print "Dark Kingdom monster appeared! Initial HP: " + str(enemy_hp)
+
+# Watchdog Fallback Handler (Tuxedo Mask)
+fallback {
+    print "Tuxedo Mask throws a red rose! 'Sailor Moon, now is your chance!'"
+}
+
+bind(ring="MERCURY") {
+    print "Sailor Mercury: 'Mercury Aqua Rhapsody!' (Telemetry validated)"
+}
+
+bind(ring="MARS") {
+    print "Sailor Mars: 'Mars Flame Sniper!' (Direct attack triggered)"
+}
+
+while (enemy_hp > 0) {
+    turn_count += 1
+    print "--- Turn Number: " + str(turn_count) + " ---"
+
+    # Ephemeral barrier (drops in 2 turns)
+    acme(ttl=2) planetary_shield = "Active_Crystal_Barrier"
+
+    if (turn_count == 1) {
+        dispatch "MERCURY"
+        enemy_hp -= attack_power
+    } else {
+        dispatch "MARS"
+        enemy_hp -= (attack_power * 2)
+    }
+    print "Enemy Remaining HP: " + str(enemy_hp)
+}
+
+# Climax Transformation (Cellular Differentiation)
+let guardian = "Usagi_Tsukino"
+transform guardian = "Princess_Serenity" {
+    print "Moon Healing Escalation! The monster is cleansed."
+}
+
+# Trigger Watchdog with unbound ring
+print "Calling distant cosmic guardian..."
+dispatch "PLUTO"
+
+halt`,
+
+            catdog: `# =============================================================
+# SMC SAMPLE: CatDog Multi-Frame Reading Frames
+# =============================================================
+# Two independent routines interleaved on the exact same lines:
+# Click "Run Cat Frame" or "Run Dog Frame" above!
+
+KAMEHAMEHA KAMEHAMEHA "Cat: Sophisticated tea time." "Dog: Let's chase cars!"
+KAMEHAMEHA KAMEHAMEHA "Cat: Reading classic literature." "Dog: Bones everywhere!"
+THATS_ALL_FOLKS THATS_ALL_FOLKS`,
+
+            acme: `# =============================================================
+# SMC SAMPLE: Acme Anvil Ephemeral Memory (mRNA Decay)
+# =============================================================
+experiment "Wile_E_Coyote_Trap"
+
+# Ephemeral variable will automatically vaporize after 2 steps
+acme(ttl=2) secret_passcode = "RoadRunner123"
+
+print "Step 1 - Accessing passcode: " + secret_passcode
+print "Step 2 - Executing action..."
+
+# Step 3: Anvil drops automatically!
+print "Step 3 - Checking passcode again:"
+print "Passcode value: " + str(secret_passcode)
+
+halt`,
+
+            hello: `# =============================================================
+# SMC SAMPLE: Hello Toon World
+# =============================================================
+experiment "My_First_Toon_Lab"
+
+let greeting = "Hello from Saturday Morning Cartoons!"
+print greeting
+
+let x = (10 * 5) + 25
+print "Calculation: " + str(x)
+
+halt`
+        };
+
+        const editor = document.getElementById("code-editor");
+        const terminal = document.getElementById("terminal-output");
+        const stats = document.getElementById("terminal-stats");
+        const ttlInspector = document.getElementById("ttl-inspector");
+        const varInspector = document.getElementById("var-inspector");
+        const fnInspector = document.getElementById("fn-inspector");
+        const select = document.getElementById("sample-select");
+
+        // Load default preset
+        editor.value = PRESETS.rpg;
+
+        select.addEventListener("change", (e) => {
+            if (PRESETS[e.target.value]) {
+                editor.value = PRESETS[e.target.value];
+            }
+        });
+
+        // Tab key support in textarea
+        editor.addEventListener("keydown", (e) => {
+            if (e.key === "Tab") {
+                e.preventDefault();
+                const start = editor.selectionStart;
+                const end = editor.selectionEnd;
+                editor.value = editor.value.substring(0, start) + "    " + editor.value.substring(end);
+                editor.selectionStart = editor.selectionEnd = start + 4;
+            }
+        });
+
+        function appendLog(line) {
+            const div = document.createElement("div");
+            div.className = "log-line";
+
+            if (line.includes("[ACME_ANVIL]")) div.className += " log-anvil";
+            else if (line.includes("[DEXTER_VM]")) div.className += " log-lab";
+            else if (line.includes("[CAPTAIN_PLANET]")) div.className += " log-planet";
+            else if (line.includes("[MOON_PRISM_POWER]")) div.className += " log-moon";
+            else if (line.includes("[TUXEDO_MASK]")) div.className += " log-tuxedo";
+
+            div.textContent = line;
+            terminal.appendChild(div);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        function updateInspector(res) {
+            // TTL Memory
+            const ttlKeys = Object.keys(res.ttlMemory);
+            if (ttlKeys.length === 0) {
+                ttlInspector.innerHTML = '<span style="color: var(--text-muted);">None active (decayed)</span>';
+            } else {
+                ttlInspector.innerHTML = ttlKeys.map(k => `
+                    <div class="item-row">
+                        <span class="item-key">${k}</span>
+                        <span class="item-ttl">${res.ttlMemory[k].ttl} ticks left</span>
+                    </div>
+                `).join("");
+            }
+
+            // Variables
+            const varKeys = Object.keys(res.variables);
+            if (varKeys.length === 0) {
+                varInspector.innerHTML = '<span style="color: var(--text-muted);">None active</span>';
+            } else {
+                varInspector.innerHTML = varKeys.map(k => `
+                    <div class="item-row">
+                        <span class="item-key">${k}</span>
+                        <span class="item-val">${JSON.stringify(res.variables[k])}</span>
+                    </div>
+                `).join("");
+            }
+
+            // Functions
+            if (res.functions.length === 0) {
+                fnInspector.innerHTML = '<span style="color: var(--text-muted);">None registered</span>';
+            } else {
+                fnInspector.innerHTML = res.functions.map(f => `
+                    <div class="item-row">
+                        <span class="item-key">fn ${f}()</span>
+                    </div>
+                `).join("");
+            }
+        }
+
+        function runCode(tokens) {
+            terminal.innerHTML = "";
+            const parser = new window.SmcEngine.SmcParser(tokens);
+            const ast = parser.parse();
+            const vm = new window.SmcEngine.DexterVM();
+            const res = vm.run(ast);
+
+            for (const line of res.stdout) {
+                appendLog(line);
+            }
+
+            stats.textContent = `Steps: ${res.steps} | Anvils Dropped: ${res.anvils}`;
+            updateInspector(res);
+        }
+
+        document.getElementById("btn-run").addEventListener("click", () => {
+            const lexer = new window.SmcEngine.SmcLexer(editor.value);
+            const tokens = lexer.tokenize();
+            runCode(tokens);
+        });
+
+        document.getElementById("btn-cat").addEventListener("click", () => {
+            const lexer = new window.SmcEngine.SmcLexer(editor.value);
+            const tokens = lexer.tokenize();
+            const { cat } = window.SmcEngine.sliceCatDog(tokens);
+            appendLog("--- RUNNING CAT FRAME (OFFSET +0) ---");
+            runCode(cat);
+        });
+
+        document.getElementById("btn-dog").addEventListener("click", () => {
+            const lexer = new window.SmcEngine.SmcLexer(editor.value);
+            const tokens = lexer.tokenize();
+            const { dog } = window.SmcEngine.sliceCatDog(tokens);
+            appendLog("--- RUNNING DOG FRAME (OFFSET +1) ---");
+            runCode(dog);
+        });
+
+        document.getElementById("btn-clear").addEventListener("click", () => {
+            terminal.innerHTML = "";
+            stats.textContent = "Steps: 0 | Anvils Dropped: 0";
+            ttlInspector.innerHTML = '<span style="color: var(--text-muted);">None active</span>';
+            varInspector.innerHTML = '<span style="color: var(--text-muted);">None active</span>';
+            fnInspector.innerHTML = '<span style="color: var(--text-muted);">None active</span>';
+        });
+
+        // Run default on load
+        setTimeout(() => {
+            document.getElementById("btn-run").click();
+        }, 300);
+    </script>
+</body>
+</html>
