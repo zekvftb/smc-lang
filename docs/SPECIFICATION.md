@@ -1,174 +1,201 @@
-# 📐 SMC (Saturday Morning Cartoons) Formal Language Specification
-**Version:** 0.7.0 (The HexaPhase Edition)  
-**Status:** Implementation-Ready Standard Reference  
-**Maintainer:** Jason Rezek (`zekvftb@gmail.com`)  
-**Runtime:** DexterVM Standalone Virtual Machine Engine  
+# 📐 SMC Language Formal Specification & Runtime Reference
+**Specification Version:** 0.7.0  
+**Target Runtime:** DexterVM Execution Engine  
+**Author:** Jason Rezek (`zekvftb@gmail.com`)  
+**Repository:** `https://github.com/zekvftb/smc-lang`  
 
 ---
 
-## 1. Lexical Grammar & Codon Degeneracy
+## 1. Language Overview & Execution Model
 
-### 1.1 Codon Wobble Typo-Tolerance & Synonyms
-SMC treats keywords as degenerate codons. Multiple synonym tokens resolve to the same internal opcode. Furthermore, if a token does not match exactly, the **Wobble Resolver** calculates the Levenshtein edit distance:
-* For tokens of length $\le 4$: Allows edit distance $\le 1$.
-* For tokens of length $\ge 5$: Allows edit distance $\le 2$ (with length $\le 6$ guarded to distance $\le 1$ to prevent keyword collisions like `report` $\rightarrow$ `import`).
+SMC is a dynamically typed, procedural, and fault-tolerant interpreted programming language. Source files (`.smc`) are parsed into an Abstract Syntax Tree (AST) via a recursive-descent Pratt parser and executed on the `DexterVM` virtual machine.
 
-#### Canonical Opcode & Synonym Map
-| Canonical Opcode | Standard Keyword | Cartoon / Biological Synonyms | Grammar Description |
+### 1.1 Core Design Axioms
+1. **Deterministic Resilience:** No standard operational error (division by zero, missing dictionary key, out-of-bounds array index, or syntax typo) causes an unhandled process termination or crash cascade.
+2. **Unified Core Language:** All features—including HexaPhase multiplexing, Acme TTL memory, template strings, and the Python FFI bridge—are part of the core language runtime and require no external plugins.
+3. **Synchronous Execution:** All statements, function calls, built-ins, and FFI bridges execute synchronously in execution step units (`execution_steps`).
+
+---
+
+## 2. Formal Lexical Grammar & Token Resolution
+
+### 2.1 Keyword & Opcode Degeneracy
+SMC maps multiple synonym tokens to canonical opcodes. Case-insensitive matching is applied to all keywords.
+
+| Opcode | Canonical Keyword | Synonym Token Set | Syntax Form |
 | :--- | :--- | :--- | :--- |
-| `EXPERIMENT` | `experiment` | `program`, `module`, `secret_lab`, `dexter_lab_experiment`, `omnitrix_init` | Declares program module header |
-| `SET_VAR` | `let` | `set`, `var`, `sugar`, `spice`, `everything_nice`, `chemical_x` | Variable assignment statement |
-| `TTL_BOX` | `acme(ttl=N)` | `acme_anvil_box`, `acme_box`, `ephemeral`, `anvil_box`, `disposable_var` | Declares ephemeral TTL variable |
-| `IF` | `if` | `when`, `check_gate`, `test` | Conditional branch |
-| `ELSE` | `else` | `otherwise`, `default` | Alternative branch |
-| `WHILE` | `while` | `loop`, `cycle`, `road_runner_loop` | Conditional loop |
-| `FOR` | `for` | `each`, `for_each`, `iterate` | Collection iteration loop |
-| `IN` | `in` | `inside`, `from` | Iterator separator |
-| `FN` | `fn` | `function`, `def`, `subroutine`, `recipe`, `technique` | Function definition |
-| `RETURN` | `return` | `yield`, `give`, `payload` | Return from function |
-| `SUMMON` | `bind` | `summon`, `summon_planeteer`, `planet_power`, `captain_planet`, `ring_bind` | Content-addressable ring handler |
-| `CALL_RING` | `dispatch` | `call`, `powers_combined`, `ring_call`, `invoke_ring`, `i_choose_you` | Ring dispatch call |
-| `TRANSFORM` | `mpp` | `transform`, `moon_prism_power`, `differentiate`, `evolve`, `morph` | Cellular differentiation transform |
-| `FALLBACK` | `fallback` | `tuxedo_mask`, `catch`, `default_handler`, `rose_throw` | Watchdog unrouted handler |
-| `PRINT` | `print` | `emit`, `say`, `shout`, `kamehameha`, `hadouken`, `cowabunga_news` | Console output stream |
-| `MUTATE` | `mutate` | `dee_dee_mutation`, `dee_dee_button`, `oops_mutation`, `radioactive_spider` | Fault-tolerance mutation block |
-| `IMPORT` | `import` | `include`, `require`, `load_module`, `plasmid_inject`, `transfect` | Modular multi-file import |
-| `PY_IMPORT` | `py_import` | `python_import`, `import_py`, `cyto_bridge`, `python` | Python ecosystem FFI import |
-| `HEXAPHASE` | `hexaphase` | `hexa_phase`, `multiplex`, `polyphase`, `catdog`, `cat_dog` | 6-channel multi-frame execution |
-| `SLIP` | `slip` | `frameshift`, `prf`, `ribo_slip`, `phase_shift` | Programmed ribosomal frameshift |
-| `ATTENUATOR` | `attenuator` | `throttle`, `stem_loop`, `hairpin_gate`, `pause_gate` | Thermodynamic pause gate |
-| `HALT` | `halt` | `exit`, `thats_all_folks`, `cowabunga`, `fin` | Clean execution termination |
+| `EXPERIMENT` | `experiment` | `program`, `module`, `secret_lab`, `dexter_lab_experiment`, `omnitrix_init` | `experiment "Name"` |
+| `SET_VAR` | `let` | `set`, `var`, `sugar`, `spice`, `everything_nice`, `chemical_x` | `let ident = expr` |
+| `TTL_BOX` | `acme` | `acme_anvil_box`, `acme_box`, `ephemeral`, `anvil_box`, `disposable_var` | `acme(ttl=int) ident = expr` |
+| `IF` | `if` | `when`, `check_gate`, `test` | `if (expr) { stmts }` |
+| `ELSE` | `else` | `otherwise`, `default` | `else { stmts }` |
+| `WHILE` | `while` | `loop`, `cycle`, `road_runner_loop` | `while (expr) { stmts }` |
+| `FOR` | `for` | `each`, `for_each`, `iterate` | `for item in container { stmts }` |
+| `FN` | `fn` | `function`, `def`, `subroutine`, `recipe`, `technique` | `fn name(p1, p2) { stmts }` |
+| `RETURN` | `return` | `yield`, `give`, `payload` | `return expr` |
+| `SUMMON` | `bind` | `summon`, `summon_planeteer`, `planet_power`, `captain_planet`, `ring_bind` | `bind(ring="KEY") { stmts }` |
+| `CALL_RING` | `dispatch` | `call`, `powers_combined`, `ring_call`, `invoke_ring`, `i_choose_you` | `dispatch "KEY"` |
+| `TRANSFORM` | `mpp` | `transform`, `moon_prism_power`, `differentiate`, `evolve`, `morph` | `mpp ident = expr { stmts }` |
+| `FALLBACK` | `fallback` | `tuxedo_mask`, `catch`, `default_handler`, `rose_throw` | `fallback { stmts }` |
+| `PRINT` | `print` | `emit`, `say`, `shout`, `kamehameha`, `hadouken`, `cowabunga_news` | `print expr` |
+| `MUTATE` | `mutate` | `dee_dee_mutation`, `dee_dee_button`, `oops_mutation`, `radioactive_spider` | `mutate { stmts }` |
+| `IMPORT` | `import` | `include`, `require`, `load_module`, `plasmid_inject`, `transfect` | `import "path.smc"` |
+| `PY_IMPORT` | `py_import` | `python_import`, `import_py`, `cyto_bridge`, `python` | `py_import "mod" as alias` |
+| `HEXAPHASE` | `hexaphase` | `hexa_phase`, `multiplex`, `polyphase`, `catdog`, `cat_dog` | `hexaphase expr { stmts }` |
+| `SLIP` | `slip` | `frameshift`, `prf`, `ribo_slip`, `phase_shift` | `slip(int_expr)` |
+| `ATTENUATOR` | `attenuator` | `throttle`, `stem_loop`, `hairpin_gate`, `pause_gate` | `attenuator(threshold=expr) { stmts }` |
+| `HALT` | `halt` | `exit`, `thats_all_folks`, `cowabunga`, `fin` | `halt` |
+
+### 2.2 Wobble Typo-Tolerance Algorithm
+Identifiers not found in keyword tables are evaluated via bounded Levenshtein distance $D(s, k)$:
+1. Identifiers matching registered built-in functions (`len`, `push`, `pop`, `str`, `int`, etc.) or single-character symbols are **never** mutated.
+2. For candidate keyword $k$ and input token $s$:
+   $$D_{max} = \begin{cases} 1 & \text{if } |s| \le 4 \\ 1 & \text{if } 5 \le |s| \le 6 \\ 2 & \text{if } |s| \ge 7 \end{cases}$$
+3. If $D(s, k) \le D_{max}$, $s$ is rewritten to $k$.
 
 ---
 
-## 2. Operator Precedence & Associativity
+## 3. Explicit Operator Precedence & Associativity Matrix
 
-Expressions in SMC are evaluated according to standard Pratt parsing rules:
+SMC enforces a strict 8-level Pratt parsing hierarchy. Binary operators are evaluated strictly left-to-right; unary operators are evaluated right-to-left.
 
-| Level | Operators | Description | Associativity |
-| :---: | :--- | :--- | :---: |
-| **7 (Highest)** | `()`, `[]`, `.` | Grouping, Indexing, Member Access | Left-to-right |
-| **6** | `!`, `not`, `-` (unary) | Logical NOT, Arithmetic Negation | Right-to-left |
-| **5** | `*`, `/`, `%` | Multiplication, Division, Modulo | Left-to-right |
-| **4** | `+`, `-` | Addition, String Concatenation, Subtraction | Left-to-right |
-| **3** | `<`, `<=`, `>`, `>=` | Relational Comparisons | Left-to-right |
-| **2** | `==`, `!=` | Equality and Inequality | Left-to-right |
-| **1** | `&&`, `and` | Short-circuiting Logical AND | Left-to-right |
-| **0 (Lowest)** | `\|\|`, `or` | Short-circuiting Logical OR | Left-to-right |
+| Level | Operator | Operation | Associativity | Example Evaluation |
+| :---: | :--- | :--- | :---: | :--- |
+| **7 (Highest)** | `()` | Grouping / Function Call | Left-to-right | `fn(x)` |
+| | `[]` | Index Access / Subscription | Left-to-right | `arr[0]`, `dict["key"]` |
+| | `.` | Member Access | Left-to-right | `obj.member` |
+| **6** | `!`, `not` | Logical Negation | Right-to-left | `!is_valid` |
+| | `-` (unary) | Arithmetic Negation | Right-to-left | `-5` |
+| **5** | `*` | Multiplication | Left-to-right | `a * b` |
+| | `/` | Division (Zero-guarded) | Left-to-right | `a / b` |
+| | `%` | Modulo | Left-to-right | `a % b` |
+| **4** | `+` | Addition, String/List Concatenation | Left-to-right | `a + b` |
+| | `-` | Subtraction | Left-to-right | `a - b` |
+| **3** | `<` | Less Than | Left-to-right | `ball_y + 1 < y` $\rightarrow$ `(ball_y + 1) < y` |
+| | `<=` | Less Than or Equal | Left-to-right | `a <= b` |
+| | `>` | Greater Than | Left-to-right | `a > b` |
+| | `>=` | Greater Than or Equal | Left-to-right | `a >= b` |
+| **2** | `==` | Equality | Left-to-right | `x == 0` |
+| | `!=` | Inequality | Left-to-right | `x != 10` |
+| **1** | `&&`, `and` | Short-circuiting Logical AND | Left-to-right | `a > 0 && b < 10` |
+| **0 (Lowest)** | `\|\|`, `or` | Short-circuiting Logical OR | Left-to-right | `x == 0 \|\| x == width - 1` |
 
----
-
-## 3. Types, Data Structures & Semantics
-
-### 3.1 Primitive Types
-* **Number:** 64-bit IEEE 754 floating-point or integer.
-* **String:** UTF-8 character sequences. Supports escape sequences (`\n`, `\t`, `\"`, `\'`, `\\`) and backtick template string interpolation (`` `Hello ${name}` ``).
-* **Boolean:** `true` and `false`.
-* **Null:** `null`.
-
-### 3.2 Collection Types
-* **List:** Ordered dynamic array `[1, "two", [3, 4]]`. Supports safe negative indexing (`arr[-1]`).
-* **Dictionary:** Key-value hash map `{"name": "Blossom", "hp": 100}`.
-
-### 3.3 Compound Assignment
-Supports `+=`, `-=`, `*=`, `/=` for variables and indexed targets (`player["hp"] -= 10`, `scores[0] += 5`).
-
----
-
-## 4. Execution Model & Scoping Rules
-
-### 4.1 Variable Resolution & Scoping Hierarchy
-1. **Local Stack Frame:** When executing inside a function `fn`, variables are resolved in the top call stack frame.
-2. **Ephemeral TTL Memory:** If not found in local frame, checks active `ttl_memory` (if unexpired).
-3. **Global Scope:** If not found, checks the global `variables` dictionary.
-4. **Undefined Fallback:** Accessing an unassigned variable evaluates safely to `0` (or `null` in boolean context) without throwing a fatal crash.
-
-### 4.2 Acme Anvil Ephemeral Memory (mRNA Half-Life Decay)
-* Syntax: `acme(ttl=N) var_name = <expression>`
-* **Lifecycle Rule:** Every execution step (`self.execution_steps += 1`, including statement execution or incoming HTTP requests) decrements all active TTL timers by $1$.
-* When $\text{TTL} \le 0$, the variable vaporizes from memory, emitting an `[ACME_ANVIL_DROP]` event in stdout.
-
-### 4.3 Content-Addressable Ring Dispatch (Captain Planet / Senshi)
-* Functions bind to categorical string/ring keys:
-  ```smc
-  bind(ring="FIRE") {
-      print "Fire attack triggered!"
-  }
-  ```
-* Dispatch invokes all handlers registered to that ring: `dispatch "FIRE"`.
-* **Watchdog Fallback:** If `dispatch` targets an unbound ring, the runtime invokes the `fallback { ... }` block (Tuxedo Mask Watchdog) if defined.
-
-### 4.4 Cellular Differentiation (`mpp` / `transform`)
-```smc
-let guardian = "Usagi"
-mpp guardian = "Princess_Serenity" {
-    print "Transformed state active: " + guardian
-}
-# guardian reverts or retains post-transformation state
-```
+### 3.1 Precedence Examples
+* `ball_y + 1 < y`:
+  Evaluates as `(ball_y + 1) < y` because Additive (`+`, Level 4) precedes Relational (`<`, Level 3).
+* `x == 0 || x == width - 1`:
+  Evaluates as `(x == 0) || (x == (width - 1))` because Additive (`-`, Level 4) > Equality (`==`, Level 2) > Logical OR (`||`, Level 0).
 
 ---
 
-## 5. HexaPhase v0.7.0 Biological Primitives
+## 4. Types, Literals & String Interpolation
 
-### 5.1 HexaPhase Multiplexing Block
-```smc
-hexaphase "ABCDEF" {
-    let p0 = hexaphase_channels["+0"] # "AD"
-    let p1 = hexaphase_channels["+1"] # "BE"
-    let p2 = hexaphase_channels["+2"] # "CF"
-    let m0 = hexaphase_channels["-0"] # Reverse phase 0
-}
-```
+### 4.1 Primitive Types
+* **Number (`int`, `float`):** 64-bit IEEE 754 floating point or integer.
+* **Boolean (`bool`):** `true`, `false`.
+* **Null (`null`):** Represents absence of value.
+* **String (`str`):** UTF-8 encoded text.
+  * Single/Double quoted: `'text'`, `"text"` (supports `\n`, `\t`, `\"`, `\'`, `\\`).
+  * **Template Strings (Backticks):** `` `Hello ${name}, score: ${points * 2}` ``.
+    * Supports multiline literals.
+    * Expression blocks `${expr}` are evaluated in current scope and string-coerced.
+    * Escaping: `\${` evaluates to literal `${`.
 
-### 5.2 Programmed Ribosomal Frameshifting (`slip`)
-* `slip(offset)`: Adjusts the virtual machine's `current_phase_offset = (current_phase_offset + offset) % 3` and updates `current_phase`.
-
-### 5.3 Attenuator Pause Gate (`attenuator`)
-* `attenuator(threshold=X) { ... }`: Evaluates thermodynamic drag threshold and rate-limits nested statement execution.
+### 4.2 Composite Collection Types
+* **List (`list`):** Dynamic ordered array: `[1, "two", [3, 4]]`.
+* **Dictionary (`dict`):** Key-value map: `{"name": "Blossom", "hp": 100}`.
 
 ---
 
-## 6. Built-in Standard Library Function Reference
+## 5. Scope, Mutability & Variable Lifecycle Semantics
 
-| Function | Signature | Return Type | Description |
+### 5.1 Pass-by-Value vs. Pass-by-Reference
+* **Primitives (`number`, `string`, `bool`, `null`):** Immutable. Passed by value.
+* **Collections (`list`, `dict`):** Mutable reference objects. Passed by reference. Modifying collection elements inside a function (`target["hp"] -= dmg`, `push(arr, item)`) mutates the original object in place.
+
+### 5.2 Scoping & Mutation Rules
+1. **Declaration (`let x = val`):** Always creates or assigns to the innermost active scope (the local stack frame if inside a function, otherwise the global variable table).
+2. **Indexed Assignment (`target[key] = val` / `target[key] -= val`):** Resolves `target` via lexical lookup and mutates the referenced collection object in place.
+3. **Compound Assignment (`x += 1`):**
+   * If `x` exists in current local call frame: mutates local `x`.
+   * Else if `x` exists in global variables: mutates outer global `x`.
+   * Else: creates and initializes `x` in current local scope.
+4. **Undefined Variables:** Reading an unassigned variable returns `0` (or `null` in boolean context) without throwing fatal runtime exceptions.
+
+### 5.3 Acme Anvil Ephemeral Memory (TTL Decay Rules)
+* **Declaration:** `acme(ttl=N) name = value`
+* **Allocation:** Stored in global table `ttl_memory[name] = TtlItem(value, ttl=N)`.
+* **Decay Rule:** Every statement execution and every incoming HTTP request decrements all active TTL values by $1$.
+* **Expiration:** When $\text{TTL} \le 0$, the entry is immediately deleted from memory.
+* **Function Scoping:** TTL variables are globally accessible unless shadowed by a local variable of the same name. Expiration of a TTL variable inside a function immediately removes it from the global lookup fallback.
+
+---
+
+## 6. Built-ins vs. Keywords Formal Specification
+
+All SMC operations are divided into **Keywords (Syntax Nodes)** and **Built-in Functions (Standard Library)**. All built-ins execute synchronously and return typed values.
+
+### 6.1 Statement Keywords (Control & Primitives)
+
+#### `hexaphase <expr> { ... }`
+* **Type:** Statement Block Keyword.
+* **Semantics:** Slices string `<expr>` of length $N$ into 6 channels stored in local/global variable `hexaphase_channels`:
+  * `"+0"`: Indices $0, 3, 6, \dots$
+  * `"+1"`: Indices $1, 4, 7, \dots$
+  * `"+2"`: Indices $2, 5, 8, \dots$
+  * `"-0"`: Reverse indices $0, 3, 6, \dots$
+  * `"-1"`: Reverse indices $1, 4, 7, \dots$
+  * `"-2"`: Reverse indices $2, 5, 8, \dots$
+
+#### `slip(<offset_expr>)`
+* **Type:** Statement Keyword.
+* **Semantics:** Shifts VM execution phase: `current_phase = (current_phase + offset) % 3`.
+
+#### `attenuator(threshold = <expr>) { ... }`
+* **Type:** Statement Block Keyword.
+* **Semantics:** Evaluates numeric threshold and executes nested block within a rate-limiting barrier.
+
+---
+
+### 6.2 Standard Built-in Functions
+
+| Function | Signature | Return Type | Semantics & Invalid Argument Behavior |
 | :--- | :--- | :--- | :--- |
-| `len` | `len(target: list\|str\|dict)` | `int` | Returns element count or string length |
-| `push` | `push(list: list, item: any)` | `list` | Appends item to list |
-| `pop` | `pop(list: list)` | `any` | Removes and returns last item |
-| `str` | `str(val: any)` | `str` | Converts value to string representation |
-| `int` | `int(val: any)` | `int` | Converts value to integer (safe fallback to `0`) |
-| `type` | `type(val: any)` | `str` | Returns `"list"`, `"dict"`, `"bool"`, `"number"`, or `"str"` |
-| `read_file` | `read_file(path: str)` | `str` | Reads UTF-8 file contents from disk |
-| `write_file` | `write_file(path: str, data: str)` | `bool` | Writes UTF-8 data to disk |
-| `serve_file` | `serve_file(path: str, mime: str)` | `dict` | Prepares HTTP response payload with file content |
-| `to_json` | `to_json(val: any)` | `str` | Serializes data structure to formatted JSON string |
-| `from_json` | `from_json(json_str: str)` | `any` | Parses JSON string into dictionary or list |
-| `range` | `range(start, end, step)` | `list` | Generates integer sequence list |
-| `split` | `split(str: str, sep: str)` | `list` | Splits string by delimiter |
-| `join` | `join(list: list, sep: str)` | `str` | Joins list elements with separator |
-| `keys` | `keys(dict: dict)` | `list` | Returns list of dictionary keys |
-| `values` | `values(dict: dict)` | `list` | Returns list of dictionary values |
-| `contains` | `contains(container, item)` | `bool` | Tests membership in list, string, or dictionary |
-| `hexaphase_compile` | `hexaphase_compile(s1, s2)` | `str` | Interleaves two strings into multiplexed locus |
-| `hexaphase_channels` | `hexaphase_channels(s: str)` | `dict` | Decomposes stream into 6 channels (`+0..-2`) |
-| `phase_slip` | `phase_slip(s: str, offset: int)` | `str` | Phase-shifts string by index offset |
-| `py_call` | `py_call(func_str, *args)` | `any` | Invokes Python standard library or imported module |
-| `py_eval` | `py_eval(expr_str: str)` | `any` | Evaluates Python expression in sandboxed scope |
-| `py_import` | `py_import(mod_name, alias)` | `bool` | Bridges Python module into SMC runtime |
-| `serve_http` | `serve_http(port, handler_fn)` | `bool` | Starts embedded multi-threaded HTTP web server |
+| `len` | `len(target)` | `int` | Returns element count or string length. Returns `0` if target is non-collection. |
+| `push` | `push(list, item)` | `list` | Appends `item` in place and returns list. Returns `[]` if target is non-list. |
+| `pop` | `pop(list)` | `any` | Removes and returns last item. Returns `0` if list is empty. |
+| `str` | `str(val)` | `str` | Converts value to string representation. |
+| `int` | `int(val)` | `int` | Parses integer. Returns `0` on parse failure or invalid type. |
+| `type` | `type(val)` | `str` | Returns `"list"`, `"dict"`, `"bool"`, `"number"`, `"str"`, or `"null"`. |
+| `read_file` | `read_file(path: str)` | `str` | Reads UTF-8 file contents from disk. Returns `""` on file not found. |
+| `write_file` | `write_file(path: str, data: str)` | `bool` | Writes UTF-8 text to disk. Returns `true` on success, `false` on failure. |
+| `serve_file` | `serve_file(path: str, mime: str)` | `dict` | Prepares HTTP response dictionary `{"status": 200, "content_type": mime, "body": data}`. |
+| `to_json` | `to_json(val)` | `str` | Serializes value to JSON string. Returns `"{}"` on failure. |
+| `from_json` | `from_json(json_str: str)` | `any` | Parses JSON string into dictionary or list. Returns `{}` on failure. |
+| `range` | `range(start, end[, step])` | `list` | Generates list of integers. Returns `[]` on invalid arguments. |
+| `split` | `split(str, sep)` | `list` | Splits string by delimiter substring. |
+| `join` | `join(list, sep)` | `str` | Joins list elements with delimiter string. |
+| `keys` | `keys(dict)` | `list` | Returns list of dictionary keys. |
+| `values` | `values(dict)` | `list` | Returns list of dictionary values. |
+| `contains` | `contains(container, item)` | `bool` | Returns `true` if item is found in list, string, or dict keys. |
+| `hexaphase_compile` | `hexaphase_compile(s1: str, s2: str)` | `str` | Interleaves two strings into multiplexed string. Returns `""` if missing args. |
+| `hexaphase_channels`| `hexaphase_channels(s: str)` | `dict` | Decompiles string into 6-channel dictionary (`+0, +1, +2, -0, -1, -2`). |
+| `phase_slip` | `phase_slip(s: str, offset: int)` | `str` | Rotates string by index offset (`s[offset:] + s[:offset]`). |
+| `py_call` | `py_call(callable_str, *args)` | `any` | Invokes Python standard library function. Returns `None` on failure. |
+| `py_eval` | `py_eval(expr_str: str)` | `any` | Evaluates Python expression string in sandboxed scope. |
+| `py_import` | `py_import(mod_name, alias)` | `bool` | Bridges Python module into `py_modules`. Returns `true` on success. |
+| `serve_http` | `serve_http(port: int, handler_fn: str)` | `bool` | Starts embedded multi-threaded HTTP server. Dispatches requests to `handler_fn(req)`. |
 
 ---
 
-## 7. Edge Case & Fault-Tolerance Policy
+## 7. Runtime Error Handling & Fault-Tolerance Policy
 
-| Condition | DexterVM Runtime Behavior |
+| Fault Condition | Exact Runtime Behavior |
 | :--- | :--- |
-| **Division by Zero (`x / 0`)** | Emits `[ZERO_DIV_GUARD]`, returns `0`, execution continues safely. |
-| **Missing List Index (`arr[99]`)** | Returns `0` (or `null`), never raises `IndexError`. |
-| **Negative List Index (`arr[-1]`)** | Wraps around safely to end of collection (`arr[len + index]`). |
-| **Missing Dict Key (`dict["missing"]`)** | Returns `0`, never raises `KeyError`. |
-| **Infinite Recursion** | Capped at depth 100; emits `[RECURSION_GUARD]` and returns gracefully. |
-| **Syntax Typo (`prnt "Hi"`)** | Automatically corrected via Levenshtein Wobble matching. |
-| **Cyclic Module Imports** | Detected and skipped to prevent infinite import loops. |
-| **Bit-Flip Mutations (`mutate`)** | Stochastic token mutator runs safely inside supervised sandbox. |
+| **Division by Zero (`x / 0`)** | Emits `[ZERO_DIV_GUARD]` log; returns `0`. Never halts process. |
+| **Missing List Index (`arr[99]`)** | Returns `0` (or `null`). Never raises `IndexError`. |
+| **Negative List Index (`arr[-1]`)** | Wraps safely to end of list (`arr[len + index]`). |
+| **Missing Dict Key (`dict["missing"]`)** | Returns `0`. Never raises `KeyError`. |
+| **Infinite Recursion** | Hard limit of 100 nested stack frames. Emits `[STACK_OVERFLOW]` and unwinds cleanly. |
+| **Unbound Ring Dispatch** | Executes `fallback { ... }` block if registered; otherwise passes cleanly. |
+| **Cyclic Module Imports** | Detected and skipped via `imported_modules` tracking set. |
