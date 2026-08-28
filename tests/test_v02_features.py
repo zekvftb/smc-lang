@@ -149,3 +149,17 @@ def test_file_io(tmp_path: Path):
     vars = res["final_variables"]
     assert vars["ok"] is True
     assert vars["content"] == "Chemical X Laboratory Data"
+
+
+def test_mpp_shorthand_transformation():
+    """Verify MPP shorthand accurately maps to Opcode.TRANSFORM."""
+    code = (
+        "let hero = 'Usagi_Civilian'\n"
+        "mpp hero = 'Sailor_Moon' {\n"
+        "    print 'Transformation complete!'\n"
+        "}\n"
+        "halt\n"
+    )
+    res = run_code(code)
+    assert res["final_variables"]["hero"] == "Sailor_Moon"
+    assert any("[MPP]" in line for line in res["stdout"])

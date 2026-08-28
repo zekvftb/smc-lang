@@ -25,7 +25,7 @@ It translates the fundamental computational principles of **DNA and RNA** into m
 | **mRNA Half-Life Decay** (Poly-A tail shortens on each translation until transcript dissolves) | Memory leaks in C/C++; periodic CPU freezes from Garbage Collectors in Java/Python. | **Acme Anvil TTL**: Ephemeral variables carry an auto-decrementing `acme(ttl=N)` timer. Once expired, it vaporizes from RAM with zero memory leaks and 0% GC pauses. |
 | **Lock-and-Key Receptors** (Proteins find targets by 3D physical pocket shape, not pointers) | Fragile numeric memory pointers (`0x7FFF`) and hard-coded network IP endpoints. | **Planetary Shape Dispatch**: Functions bind to elemental and planetary rings (`MERCURY`, `MARS`, `JUPITER`, `VENUS`, `MOON`). Callers emit ring keys to trigger matching handlers. |
 | **p53 DNA Repair Checkpoint** ("Guardian of the genome" catching unrouted sequences) | Unhandled exceptions and crash cascades. | **Tuxedo Mask Watchdog**: Catches unrouted dispatches with a graceful fallback block ("My work here is done!"). |
-| **Cellular Differentiation** (Stem cells differentiating into specialized tissue states) | State evolution and polymorphic typing. | **Sailor Moon Transformation**: `transform` / `MOON_PRISM_POWER` blocks explicitly evolve state objects. |
+| **Cellular Differentiation** (Stem cells differentiating into specialized tissue states) | State evolution and polymorphic typing. | **Sailor Moon MPP (Moon Prism Power)**: `mpp` (or `transform`) explicitly evolves an entity into its specialized form with dedicated behavior. |
 
 ---
 
@@ -89,14 +89,27 @@ while (enemy_hp > 0) {
     let enemy_hp = enemy_hp - attack_power
 }
 
-# 5. Sailor Moon State Transformation (Cellular Differentiation)
+# 5. Cellular Differentiation via MPP (Moon Prism Power)
 let guardian = "Usagi_Tsukino"
-transform guardian = "Princess_Serenity" {
+mpp guardian = "Princess_Serenity" {
     print "State transformed to royal tier!"
 }
 
 halt
 ```
+
+---
+
+## 🎭 Why the Names Match the Functions
+
+Every cartoon and anime namesake in SMC was intentionally chosen because its nostalgic pop-culture behavior precisely mirrors its computer science and biological function:
+
+* 📦 **`acme` (Time-To-Live Memory Drop = mRNA Decay)**: In Looney Tunes, Wile E. Coyote orders from Acme Corporation, and an anvil inevitably drops on him from the sky. In SMC, `acme(ttl=N)` sets a countdown timer where an anvil literally drops on your variable, vaporizing it from RAM when its time is up with zero garbage collection pauses.
+* 🌙 **`mpp` (Moon Prism Power = Cellular Differentiation)**: In Sailor Moon, shouting *"Moon Prism Power, Make Up!"* transforms Usagi from a normal schoolgirl into Sailor Moon. In SMC, `mpp var = new_state { ... }` permanently evolves an entity into its higher specialized form with dedicated behavior.
+* 🌹 **`tuxedo` (Tuxedo Mask = Watchdog Fallback)**: In Sailor Moon, whenever a battle goes off-script and danger strikes, Tuxedo Mask mysteriously arrives, throws a red rose to intercept the attack, says *"My work here is done,"* and departs. In SMC, `tuxedo` / `fallback` intercepts unrouted dispatches to prevent crashes.
+* 💍 **`rings` / `dispatch` (Planeteers = Lock-and-Key Receptors)**: In Captain Planet, Kwame, Wheeler, Linka, Gi, and Ma-Ti combine their elemental rings (*"Earth! Fire! Wind! Water! Heart!"*). In SMC, functions bind to receptor rings and dispatch by shape rather than fragile memory pointers.
+* 🐱🐶 **`catdog` (Dual Reading Frames = Overlapping Genes)**: In CatDog, two completely different animals share a single body. In SMC, `catdog` interleaves two completely different programs on the exact same line of code for 2x memory density.
+* 🔴 **`dee_dee` (Mutation Engine = Genetic Mutation Stress Testing)**: Dexter's sister Dee Dee sneaks into the lab asking *"Oooooh, what does THIS button do?!"* In SMC, `dee_dee` blocks inject non-destructive mutations to prove your system's codon wobble fault-tolerance.
 
 ---
 

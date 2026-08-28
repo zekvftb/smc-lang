@@ -21,7 +21,7 @@ const OPCODE_SYNONYMS = {
     RETURN: ["RETURN", "YIELD", "GIVE", "PAYLOAD"],
     SUMMON: ["BIND", "SUMMON", "SUMMON_PLANETEER", "PLANET_POWER", "CAPTAIN_PLANET", "RING_BIND"],
     CALL_RING: ["DISPATCH", "CALL", "POWERS_COMBINED", "RING_CALL", "INVOKE_RING", "I_CHOOSE_YOU"],
-    TRANSFORM: ["TRANSFORM", "MOON_PRISM_POWER", "DIFFERENTIATE", "EVOLVE", "SAILOR_TRANSFORM"],
+    TRANSFORM: ["MPP", "TRANSFORM", "MOON_PRISM_POWER", "DIFFERENTIATE", "EVOLVE", "MORPH", "SAILOR_TRANSFORM"],
     FALLBACK: ["FALLBACK", "TUXEDO_MASK", "CATCH", "DEFAULT_HANDLER", "ROSE_THROW"],
     PRINT: ["PRINT", "EMIT", "SAY", "SHOUT", "KAMEHAMEHA", "HADOUKEN", "COWABUNGA_NEWS"],
     MUTATE: ["MUTATE", "DEE_DEE_MUTATION", "DEE_DEE_BUTTON", "OOPS_MUTATION", "RADIOACTIVE_SPIDER"],
@@ -898,7 +898,7 @@ class DexterVM {
         } else if (node.type === "Transform") {
             const val = this.evalExpr(node.expr);
             this.setVar(node.target, val);
-            this.stdout.push(`[MOON_PRISM_POWER] (Sailor Moon Transformation) '${node.target}' evolved to '${val}'!`);
+            this.stdout.push(`[MPP] (Moon Prism Power Transformation) '${node.target}' evolved to '${val}'!`);
             for (const s of node.body) this.executeNode(s);
         } else if (node.type === "Fallback") {
             this.fallbackHandler = node.body;

@@ -43,7 +43,7 @@
     },
     {
       "name": "entity.name.function.special.smc",
-      "match": "\\b(?i)(acme|acme_anvil_box|moon_prism_power|tuxedo_mask|summon|call_ring)\\b"
+      "match": "\\b(?i)(acme|acme_anvil_box|mpp|moon_prism_power|tuxedo_mask|summon|call_ring)\\b"
     },
     {
       "name": "support.function.builtin.smc",

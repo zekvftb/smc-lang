@@ -461,11 +461,11 @@ class DexterVM:
                 else:
                     self.stdout.append(f"[CAPTAIN_PLANET] [WARNING] No matching ring '{ring}' bound in cell.")
 
-        # 12. TRANSFORM (Sailor Moon MOON_PRISM_POWER)
+        # 12. TRANSFORM (Sailor Moon MPP - Moon Prism Power)
         elif isinstance(node, TransformNode):
             val = self.evaluate_expression(node.expr)
             self.set_var(node.target_var, val)
-            self.stdout.append(f"[MOON_PRISM_POWER] (Sailor Moon Transformation) '{node.target_var}' evolved to '{val}'!")
+            self.stdout.append(f"[MPP] (Sailor Moon Transformation) '{node.target_var}' evolved to '{val}'!")
             for stmt in node.body:
                 if self.halted or self.return_triggered:
                     break

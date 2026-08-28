@@ -186,9 +186,9 @@ while (enemy_hp > 0) {
     print "Enemy Remaining HP: " + str(enemy_hp)
 }
 
-# Climax Transformation (Cellular Differentiation)
+# Climax Transformation (Cellular Differentiation via MPP)
 let guardian = "Usagi_Tsukino"
-transform guardian = "Princess_Serenity" {
+mpp guardian = "Princess_Serenity" {
     print "Moon Healing Escalation! The monster is cleansed."
 }
 
@@ -274,7 +274,7 @@ halt`
             if (line.includes("[ACME_ANVIL]")) div.className += " log-anvil";
             else if (line.includes("[DEXTER_VM]")) div.className += " log-lab";
             else if (line.includes("[CAPTAIN_PLANET]")) div.className += " log-planet";
-            else if (line.includes("[MOON_PRISM_POWER]")) div.className += " log-moon";
+            else if (line.includes("[MOON_PRISM_POWER]") || line.includes("[MPP]")) div.className += " log-moon";
             else if (line.includes("[TUXEDO_MASK]")) div.className += " log-tuxedo";
 
             div.textContent = line;

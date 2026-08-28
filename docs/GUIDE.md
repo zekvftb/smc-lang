@@ -258,13 +258,13 @@ acme(ttl=2) session_token = "TEMP_KEY_123"
 ```
 After 2 execution cycles, an Acme anvil drops and the variable vaporizes from RAM with zero memory leaks and zero garbage collection pauses.
 
-### Superpower 3: Sailor Moon Transformations (`MOON_PRISM_POWER`)
+### Superpower 3: Sailor Moon Transformations (`mpp` / `MOON_PRISM_POWER`)
 *Biological Principle: Cellular Differentiation*
 
-Cells differentiate from stem cells into specialized tissues. In SMC, you can transform state using the `transform` / `MOON_PRISM_POWER` block:
+Cells differentiate from stem cells into specialized tissues. Just as Usagi shouts *"Moon Prism Power!"* to transform into Sailor Moon, you can evolve state using the punchy **`mpp`** keyword:
 ```smc
 let guardian = "Usagi_Tsukino"
-transform guardian = "Princess_Serenity" {
+mpp guardian = "Princess_Serenity" {
     print "State evolved to royal tier!"
 }
 ```
