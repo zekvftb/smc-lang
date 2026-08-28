@@ -6,6 +6,11 @@ It translates the fundamental computational principles of **DNA and RNA** into m
 
 ---
 
+## 🌐 Interactive Web Playground
+🎮 **[Try SMC Live in Your Browser](https://zekvftb.github.io/smc-lang/)** *(Zero install required — runs client-side on mobile & desktop)*
+
+---
+
 ## 📖 Complete Documentation & Tutorial
 👉 **Read the comprehensive guide and manual in [docs/GUIDE.md](docs/GUIDE.md)**!
 
