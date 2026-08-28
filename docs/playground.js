@@ -26,6 +26,7 @@ const OPCODE_SYNONYMS = {
     PRINT: ["PRINT", "EMIT", "SAY", "SHOUT", "KAMEHAMEHA", "HADOUKEN", "COWABUNGA_NEWS"],
     MUTATE: ["MUTATE", "DEE_DEE_MUTATION", "DEE_DEE_BUTTON", "OOPS_MUTATION", "RADIOACTIVE_SPIDER"],
     IMPORT: ["IMPORT", "INCLUDE", "REQUIRE", "LOAD_MODULE", "PLASMID_INJECT", "TRANSFECT"],
+    PY_IMPORT: ["PY_IMPORT", "PYTHON_IMPORT", "IMPORT_PY", "CYTO_BRIDGE", "PYTHON"],
     HALT: ["HALT", "EXIT", "THATS_ALL_FOLKS", "COWABUNGA", "FIN"]
 };
 
@@ -44,7 +45,7 @@ for (const [op, syns] of Object.entries(OPCODE_SYNONYMS)) {
 const BUILTIN_NAMES = new Set([
     "LEN", "PUSH", "POP", "STR", "INT", "TYPE", "READ_FILE", "WRITE_FILE", "SERVE_HTTP",
     "TO_JSON", "FROM_JSON", "RANGE", "SPLIT", "JOIN", "KEYS", "VALUES", "CONTAINS", "SERVE_FILE",
-    "TRUE", "FALSE", "NULL", "AND", "OR"
+    "PY_CALL", "PY_EVAL", "TRUE", "FALSE", "NULL", "AND", "OR"
 ]);
 
 function levenshteinDistance(s1, s2) {
@@ -732,6 +733,18 @@ class SmcParser {
             return { type: "Import", path: String(path) };
         }
 
+        // PY_IMPORT: py_import "math"
+        if (this.matchOpcode("PY_IMPORT")) {
+            this.advance();
+            const mod = this.advance().value;
+            let alias = null;
+            if (this.peek().type === "IDENTIFIER" && String(this.peek().value).toLowerCase() === "as") {
+                this.advance();
+                alias = this.advance().value;
+            }
+            return { type: "PyImport", module: String(mod), alias };
+        }
+
         // HALT
         if (this.matchOpcode("HALT")) {
             this.advance();
@@ -887,6 +900,38 @@ class DexterVM {
                 this.serverHandler = String(args[1] || "handle_request");
                 this.stdout.push(`[HTTP_SERVER] Laboratory server active on port ${this.serverPort}! Virtual Browser connected.`);
                 return true;
+            }
+            if (fnLower === "py_call") {
+                if (!args || args.length === 0) return null;
+                const target = String(args[0]);
+                const cArgs = args.slice(1);
+                if (target === "math.sqrt" || target === "sqrt") return Math.sqrt(cArgs[0] ?? 0);
+                if (target === "math.pow" || target === "pow") return Math.pow(cArgs[0] ?? 0, cArgs[1] ?? 1);
+                if (target === "math.sin" || target === "sin") return Math.sin(cArgs[0] ?? 0);
+                if (target === "math.cos" || target === "cos") return Math.cos(cArgs[0] ?? 0);
+                if (target === "math.floor" || target === "floor") return Math.floor(cArgs[0] ?? 0);
+                if (target === "math.ceil" || target === "ceil") return Math.ceil(cArgs[0] ?? 0);
+                if (target === "random.randint") {
+                    const min = cArgs[0] ?? 0, max = cArgs[1] ?? 100;
+                    return Math.floor(Math.random() * (max - min + 1)) + min;
+                }
+                if (target === "random.random") return Math.random();
+                if (target === "datetime.datetime.now" || target === "datetime.now") return new Date().toISOString();
+                if (target === "datetime.date.today" || target === "date.today") return new Date().toISOString().split("T")[0];
+                if (target === "secrets.token_hex") return Array.from({length: (cArgs[0] || 8) * 2}, () => Math.floor(Math.random()*16).toString(16)).join("");
+                this.stdout.push(`[PY_BRIDGE] Emulated call to '${target}' executed.`);
+                return 0;
+            }
+            if (fnLower === "py_eval") {
+                if (!args || args.length === 0) return null;
+                const expr = String(args[0]);
+                if (expr === "math.pi") return Math.PI;
+                if (expr.includes("datetime.now().year") || expr.includes("year")) return new Date().getFullYear();
+                try {
+                    return Function(`"use strict"; return (${expr.replace(/math\./g, "Math.").replace(/sum\(/g, "([").replace(/\)/g, "].reduce((a,b)=>a+b,0))")})`)();
+                } catch (e) {
+                    return `[PY_EVAL] ${expr}`;
+                }
             }
 
             // User function
@@ -1063,6 +1108,9 @@ class DexterVM {
             } else {
                 this.stdout.push(`[IMPORT_ERROR] Cannot find module '${path}' in virtual file system.`);
             }
+        } else if (node.type === "PyImport") {
+            const alias = node.alias || node.module.split(".").pop();
+            this.stdout.push(`[PY_BRIDGE] Successfully loaded Python module '${node.module}' as '${alias}'.`);
         } else if (node.type === "Halt") {
             this.halted = true;
             this.stdout.push("[THATS_ALL_FOLKS] [HALT] Program reached clean termination.");

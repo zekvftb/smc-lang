@@ -76,6 +76,7 @@ class Opcode(str, Enum):
     PRINT = "PRINT"
     MUTATE = "MUTATE"
     IMPORT = "IMPORT"
+    PY_IMPORT = "PY_IMPORT"
     HALT = "HALT"
 
 
@@ -133,6 +134,9 @@ OPCODE_SYNONYMS: dict[Opcode, list[str]] = {
     Opcode.IMPORT: [
         "IMPORT", "INCLUDE", "REQUIRE", "LOAD_MODULE", "PLASMID_INJECT", "TRANSFECT"
     ],
+    Opcode.PY_IMPORT: [
+        "PY_IMPORT", "PYTHON_IMPORT", "IMPORT_PY", "CYTO_BRIDGE", "PYTHON"
+    ],
     Opcode.HALT: [
         "HALT", "EXIT", "THATS_ALL_FOLKS", "COWABUNGA", "FIN"
     ],
@@ -168,7 +172,7 @@ def levenshtein_distance(s1: str, s2: str) -> int:
 BUILTIN_IDENTIFIERS = {
     "LEN", "POP", "INT", "STR", "PUSH", "TYPE", "READ_FILE", "WRITE_FILE", "SERVE_HTTP",
     "TO_JSON", "FROM_JSON", "RANGE", "SPLIT", "JOIN", "KEYS", "VALUES", "CONTAINS", "SERVE_FILE",
-    "TRUE", "FALSE", "NULL", "AND", "OR"
+    "PY_CALL", "PY_EVAL", "TRUE", "FALSE", "NULL", "AND", "OR"
 }
 
 

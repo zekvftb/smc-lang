@@ -192,6 +192,30 @@ SMC handles nested dependencies and features **cycle-safe import guards** to pre
 
 ---
 
+## 🧬 Python Ecosystem Bridge (FFI)
+
+SMC has native access to the **entire Python standard library and 500,000+ PyPI packages**:
+
+```smc
+# 1. Direct Python function calling
+let root = py_call("math.sqrt", 256)
+let dice = py_call("random.randint", 1, 6)
+
+# 2. Native Python module import with alias
+py_import "datetime" as dt
+let stamp = py_call("datetime.datetime.now")
+
+# 3. Dynamic Python evaluation
+let total = py_eval("sum([10, 20, 30, 40])")
+
+# 4. Ephemeral Acme TTL + Cryptography
+acme(ttl=3) auth_token = py_call("secrets.token_hex", 16)
+```
+
+Fault-tolerant error handling guarantees that missing modules or exceptions log diagnostics without crashing the biological DexterVM process!
+
+---
+
 ## 🎮 Interactive Live Web Playground
 Experience SMC live in your browser with zero installation:
 👉 **[https://zekvftb.github.io/smc-lang/](https://zekvftb.github.io/smc-lang/)**
@@ -219,7 +243,7 @@ Run the comprehensive test suite:
 ```powershell
 python -m pytest D:\smc_lang\tests/
 ```
-**All 38 tests pass in 6.7 seconds (including live HTTP socket tests, project scaffolding, and modular imports)!**
+**All 42 tests pass in 6.7 seconds (including live HTTP socket tests, Python FFI bridge, and modular imports)!**
 
 ---
 
@@ -229,7 +253,7 @@ SMC includes an official VS Code extension for full syntax coloring!
 
 ### ⚡ 1-Click Install with `.vsix`:
 ```powershell
-code --install-extension editors/vscode/smc-lang-0.5.1.vsix
+code --install-extension editors/vscode/smc-lang-0.6.0.vsix
 ```
 
 Or copy the extension folder manually:

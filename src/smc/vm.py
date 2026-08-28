@@ -14,11 +14,17 @@ Features:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
+import importlib
 import json
+import math
 import mimetypes
+import os
 from pathlib import Path
 import random
+import sys
+import time
 from typing import Any
 
 from smc.parser import (
@@ -42,6 +48,7 @@ from smc.parser import (
     MutateBlockNode,
     PrintNode,
     ProgramNode,
+    PyImportNode,
     ReturnNode,
     SetVarNode,
     SummonNode,
@@ -79,8 +86,19 @@ class DexterVM:
         self.mutations_survived: int = 0
         self.halted: bool = False
         self.imported_modules: set[Path] = set()
+        self.py_modules: dict[str, Any] = {}
         self.current_file: Path | None = None
         self.rng = random.Random(seed)
+
+    def _marshal_from_python(self, val: Any) -> Any:
+        """Recursively marshal Python objects into native SMC representations."""
+        if val is None or isinstance(val, (int, float, str, bool)):
+            return val
+        if isinstance(val, (list, tuple, set)):
+            return [self._marshal_from_python(x) for x in val]
+        if isinstance(val, dict):
+            return {str(k): self._marshal_from_python(v) for k, v in val.items()}
+        return str(val)
 
     def _tick_acme_ttls(self) -> None:
         """Tick down all Acme Anvil TTL counters; vaporize expired variables."""
@@ -120,7 +138,7 @@ class DexterVM:
         return name.lower() in (
             "len", "push", "pop", "str", "int", "type", "read_file", "write_file",
             "serve_http", "to_json", "from_json", "range", "split", "join", "keys",
-            "values", "contains", "serve_file"
+            "values", "contains", "serve_file", "py_call", "py_eval", "py_import"
         )
 
     def _call_builtin(self, name: str, args: list[Any]) -> Any:
@@ -265,6 +283,78 @@ class DexterVM:
                 except UnicodeDecodeError:
                     return {"status": 200, "content_type": mime_type, "body": filepath.read_bytes().decode("latin1")}
             return {"status": 404, "content_type": "text/html; charset=utf-8", "body": f"<h1>404 File '{filepath.name}' Not Found</h1>"}
+
+        if fn == "py_call":
+            if not args:
+                self.stdout.append("[PY_BRIDGE_ERROR] py_call requires a target e.g. 'math.sqrt'.")
+                return None
+            target_str = str(args[0])
+            call_args = list(args[1:])
+            try:
+                if "." in target_str:
+                    parts = target_str.rsplit(".", 1)
+                    mod_name, func_name = parts[0], parts[1]
+                    if mod_name in self.py_modules:
+                        mod = self.py_modules[mod_name]
+                    else:
+                        mod = importlib.import_module(mod_name)
+                    func = getattr(mod, func_name)
+                else:
+                    func = None
+                    for mod in self.py_modules.values():
+                        if hasattr(mod, target_str):
+                            func = getattr(mod, target_str)
+                            break
+                    if func is None:
+                        import builtins
+                        func = getattr(builtins, target_str, None)
+
+                if func is None or not callable(func):
+                    self.stdout.append(f"[PY_BRIDGE_ERROR] Could not resolve callable '{target_str}'.")
+                    return None
+
+                result = func(*call_args)
+                return self._marshal_from_python(result)
+            except Exception as e:
+                self.stdout.append(f"[PY_BRIDGE_ERROR] Python call '{target_str}' failed: {e}")
+                return None
+
+        if fn == "py_eval":
+            if not args:
+                return None
+            expr_str = str(args[0])
+            try:
+                default_scope = {
+                    "math": math,
+                    "random": random,
+                    "datetime": datetime,
+                    "json": json,
+                    "time": time,
+                    "os": os,
+                    "sys": sys,
+                }
+                scope = dict(default_scope)
+                scope.update(self.py_modules)
+                scope.update(self.variables)
+                result = eval(expr_str, {"__builtins__": __builtins__}, scope)
+                return self._marshal_from_python(result)
+            except Exception as e:
+                self.stdout.append(f"[PY_BRIDGE_ERROR] Python eval '{expr_str}' failed: {e}")
+                return None
+
+        if fn == "py_import":
+            if not args:
+                return None
+            mod_name = str(args[0])
+            alias = str(args[1]) if len(args) > 1 else mod_name.split(".")[-1]
+            try:
+                mod = importlib.import_module(mod_name)
+                self.py_modules[alias] = mod
+                self.stdout.append(f"[PY_BRIDGE] Loaded Python module '{mod_name}' as '{alias}'.")
+                return True
+            except Exception as e:
+                self.stdout.append(f"[PY_BRIDGE_ERROR] Failed to import Python module '{mod_name}': {e}")
+                return False
 
         if fn == "serve_http":
             if not args:
@@ -708,7 +798,18 @@ class DexterVM:
             except Exception as e:
                 self.stdout.append(f"[IMPORT_ERROR] Failed to execute module '{mod_path_str}': {e}")
 
-        # 17. HALT
+        # 17. PY_IMPORT (Python Ecosystem Module Bridge)
+        elif isinstance(node, PyImportNode):
+            mod_name = node.module_name
+            alias = node.alias or mod_name.split(".")[-1]
+            try:
+                mod = importlib.import_module(mod_name)
+                self.py_modules[alias] = mod
+                self.stdout.append(f"[PY_BRIDGE] Successfully loaded Python module '{mod_name}' as '{alias}'.")
+            except Exception as e:
+                self.stdout.append(f"[PY_BRIDGE_ERROR] Failed to import Python module '{mod_name}': {e}")
+
+        # 18. HALT
         elif isinstance(node, HaltNode):
             self.halted = True
             self.stdout.append("[THATS_ALL_FOLKS] [HALT] Program reached clean termination.")

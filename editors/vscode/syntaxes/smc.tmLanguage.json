@@ -54,7 +54,7 @@
     },
     {
       "name": "keyword.control.smc",
-      "match": "\\b(?i)(if|else|while|for|in|fn|return|import|include|require|load_module|halt|exit|transform|fallback)\\b"
+      "match": "\\b(?i)(if|else|while|for|in|fn|return|import|include|require|load_module|py_import|python_import|import_py|halt|exit|transform|fallback)\\b"
     },
     {
       "name": "keyword.declaration.smc",
@@ -66,7 +66,7 @@
     },
     {
       "name": "support.function.builtin.smc",
-      "match": "\\b(len|push|pop|str|int|type|read_file|write_file|serve_http|serve_file|to_json|from_json|range|split|join|keys|values|contains|print|kamehameha|hadouken)\\b"
+      "match": "\\b(len|push|pop|str|int|type|read_file|write_file|serve_http|serve_file|to_json|from_json|range|split|join|keys|values|contains|py_call|py_eval|print|kamehameha|hadouken)\\b"
     },
     {
       "name": "constant.language.toon.smc",

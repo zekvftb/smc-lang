@@ -179,6 +179,13 @@ class ImportNode(AstNode):
 
 
 @dataclass
+class PyImportNode(AstNode):
+    """Import a Python module: py_import 'math'"""
+    module_name: str
+    alias: str | None = None
+
+
+@dataclass
 class HaltNode(AstNode):
     pass
 
@@ -692,7 +699,19 @@ class SmcParser:
             path_tok = self._advance()
             return ImportNode(path=str(path_tok.value))
 
-        # 17. HALT
+        # 17. PY_IMPORT: py_import "math"
+        if self._match_opcode(Opcode.PY_IMPORT):
+            self._advance()
+            mod_tok = self._advance()
+            mod_name = str(mod_tok.value)
+            alias = None
+            if self._peek().token_type == TokenType.IDENTIFIER and str(self._peek().value).lower() == "as":
+                self._advance()  # as
+                alias_tok = self._advance()
+                alias = str(alias_tok.value)
+            return PyImportNode(module_name=mod_name, alias=alias)
+
+        # 18. HALT
         if self._match_opcode(Opcode.HALT):
             self._advance()
             return HaltNode()

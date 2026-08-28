@@ -11,7 +11,7 @@
         <div class="logo-group">
             <span class="logo-badge">SMC</span>
             <h2>Saturday Morning Cartoons</h2>
-            <span class="badge badge-cyan">v0.5.0</span>
+            <span class="badge badge-cyan">v0.6.0</span>
             <span class="badge badge-green">In-Browser VM</span>
         </div>
         <div class="header-links">
@@ -24,6 +24,7 @@
     <div class="control-bar">
         <label for="sample-select" style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted);">Lab Presets:</label>
         <select id="sample-select">
+            <option value="python_bridge">🧬 Python Ecosystem Bridge (py_call, py_eval, py_import)</option>
             <option value="web_server">🌐 Full-Stack Web Server (serve_http, to_json, Templates)</option>
             <option value="modular">📦 Modular Multi-File Import (import 'math_utils.smc')</option>
             <option value="rpg">⚔️ Townsville RPG Battle (Dicts, Loops, Buffs)</option>
@@ -110,6 +111,37 @@
     <script src="playground.js"></script>
     <script>
         const PRESETS = {
+            python_bridge: `# =============================================================
+# SMC SAMPLE: Python Ecosystem Bridge (FFI)
+# =============================================================
+experiment "Dexter_Python_Supercharge_Experiment"
+
+print "=== 🧬 SMC PYTHON ECOSYSTEM BRIDGE (FFI) ==="
+
+# 1. Direct Python Standard Library Function Calling
+let root = py_call("math.sqrt", 256)
+let pi_val = py_eval("math.pi")
+print \`Square root of 256: \${root}\`
+print \`Mathematical Constant PI: \${pi_val}\`
+
+# 2. Dynamic Randomization with Python's random module
+let roll = py_call("random.randint", 1, 100)
+print \`Quantum Random Roll (1-100): \${roll}\`
+
+# 3. Native Python Module Import with Alias
+py_import "datetime" as dt
+let current_year = py_eval("dt.datetime.now().year")
+let current_stamp = py_call("datetime.datetime.now")
+print \`System Year: \${current_year}\`
+print \`Timestamp: \${current_stamp}\`
+
+# 4. Ephemeral Acme TTL Variable + Cryptographic Token
+acme(ttl=3) cipher_key = py_call("secrets.token_hex", 8)
+print \`Ephemeral Cryptographic Token (mRNA TTL=3): \${cipher_key}\`
+
+print "Python FFI Bridge executed with 100% biological resilience!"
+halt`,
+
             web_server: `# =============================================================
 # SMC SAMPLE: Full-Stack Web Server (DexterVM Native HTTP)
 # =============================================================

@@ -39,7 +39,10 @@ def run_file(file_path: Path | str) -> None:
 
     print("\n--- DEXTER_VM EXECUTION OUTPUT ---")
     for line in res["stdout"]:
-        print(line)
+        try:
+            print(line)
+        except UnicodeEncodeError:
+            print(line.encode(sys.stdout.encoding or "utf-8", errors="replace").decode(sys.stdout.encoding or "utf-8"))
     print("----------------------------------\n")
     print(f"Steps: {res['execution_steps']} | Anvils Dropped: {res['anvils_dropped']} | Mutations Survived: {res['mutations_survived']}")
 
@@ -61,14 +64,20 @@ def run_catdog(file_path: Path | str) -> None:
     cat_vm = DexterVM()
     cat_res = cat_vm.run(cat_ast)
     for line in cat_res["stdout"]:
-        print(line)
+        try:
+            print(line)
+        except UnicodeEncodeError:
+            print(line.encode(sys.stdout.encoding or "utf-8", errors="replace").decode(sys.stdout.encoding or "utf-8"))
 
     print("\n[DOG FRAME] ==================== (OFFSET +1) ====================")
     dog_ast = SmcParser(dog_tokens).parse()
     dog_vm = DexterVM()
     dog_res = dog_vm.run(dog_ast)
     for line in dog_res["stdout"]:
-        print(line)
+        try:
+            print(line)
+        except UnicodeEncodeError:
+            print(line.encode(sys.stdout.encoding or "utf-8", errors="replace").decode(sys.stdout.encoding or "utf-8"))
     print("===================================================================\n")
 
 
