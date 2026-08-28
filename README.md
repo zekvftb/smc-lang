@@ -1,8 +1,12 @@
 # 📺 SMC (Saturday Morning Cartoons) Programming Language
+**The Biologically-Inspired, Bytecode-Compiled State Machine Language**
 
-**SMC (Saturday Morning Cartoons)** is a biologically inspired, fault-tolerant programming language and standalone virtual machine. 
+[![Pytest Status](https://img.shields.io/badge/tests-64%20passed-brightgreen.svg)](tests/)
+[![Architecture](https://img.shields.io/badge/engine-Linear%20Bytecode%20VM-blue.svg)](src/smc/bytecode_vm.py)
+[![Standard Library](https://img.shields.io/badge/stdlib-math%20%7C%20fsm%20%7C%20sequence-orange.svg)](std/)
+[![License: MIT/Fair-Source](https://img.shields.io/badge/License-Fair--Source%201.0-purple.svg)](LICENSE)
 
-It translates the fundamental computational principles of **DNA and RNA** into modern, license-free software architecture, paired with subtle 90s cartoon and anime nostalgia!
+**SMC (Saturday Morning Cartoons)** is a dual-profile programming language and fast linear bytecode virtual machine. It combines the multi-threaded information density and fault-tolerance of **biological genomes** with clean Go-inspired developer ergonomics and nostalgic Saturday morning pop culture!
 
 ---
 
@@ -11,117 +15,121 @@ It translates the fundamental computational principles of **DNA and RNA** into m
 
 ---
 
-## 📖 Master Handbook, Specification & Beginner's Guide
-👉 **[docs/SMC_MADE_SIMPLE.md](docs/SMC_MADE_SIMPLE.md)** *(The fun, plain-English "Made Simple" beginner tutorial!)*  
-👉 **[SMC_MASTER_HANDBOOK.md](SMC_MASTER_HANDBOOK.md)** *(The exhaustive guide with 7 real-world production blueprints!)*  
-👉 **[docs/SPECIFICATION.md](docs/SPECIFICATION.md)** *(The formal language specification and operator precedence table)*  
-👉 **[docs/GUIDE.md](docs/GUIDE.md)** *(The complete technical step-by-step tutorial)*  
+## 📖 Master Documentation & Guides
+* 👉 **[`docs/SMC_MADE_SIMPLE.md`](docs/SMC_MADE_SIMPLE.md)** *(The fun, plain-English "Made Simple" beginner tutorial!)*  
+* 👉 **[`SMC_MASTER_HANDBOOK.md`](SMC_MASTER_HANDBOOK.md)** *(The exhaustive guide with real-world production blueprints)*  
+* 👉 **[`docs/SPECIFICATION.md`](docs/SPECIFICATION.md)** *(The formal language specification and EBNF grammar)*  
+* 👉 **[`docs/GUIDE.md`](docs/GUIDE.md)** *(The complete technical step-by-step tutorial)*  
 
+---
+
+## ⚡ Key Architectural Features (v0.8.0)
+
+### 1. 🚀 Linear Bytecode Compiler & Stack VM (Fast Default Engine)
+SMC compiles AST trees into flat arrays of linear bytecode instructions (`LOAD_CONST`, `STORE_VAR`, `BINARY_OP`, `JUMP`, `CALL_BUILTIN`, `HALT`), executing on a high-throughput stack virtual machine with an integer program counter (`pc`).
+```powershell
+smc run script.smc
+```
+
+### 2. 🛡️ Strict Mode (`--strict`)
+Disable fuzzy Levenshtein repairs for zero-tolerance production software development:
+```powershell
+smc run --strict script.smc
+```
+
+### 3. 🔍 Linear Bytecode Disassembler (`smc dis`)
+Inspect compiled bytecode instructions, memory offsets, and operands:
+```powershell
+smc dis examples/rover_state_machine.smc
+```
+
+### 4. 🐞 Interactive Step Debugger CLI (`smc debug`)
+Step through execution instruction-by-instruction, examine active variables, and evaluate expressions in real time:
+```powershell
+smc debug examples/rover_state_machine.smc
+```
+
+### 5. 📦 Modular Standard Library (`std/`)
+* **`std/math.smc`:** `mean()`, `variance()`, `min_val()`, `max_val()`, `moving_average()`, `clamp()`.
+* **`std/fsm.smc`:** State machine verification (`validate_fsm`) and deterministic simulation (`simulate_fsm`).
+* **`std/sequence.smc`:** Sequence analysis (`gc_content_pct()`, `extract_codons()`, `count_motifs()`).
 
 ---
 
 ## 🧬 Biological Principles to SMC Software Architecture
 
-| Real Biological Mechanism (DNA/RNA) | Computer Science Problem | SMC Language Solution |
+| Real Biological Mechanism | Computer Science Problem | SMC Language Solution |
 | :--- | :--- | :--- |
-| **Codon Degeneracy** (64 codons map to 20 amino acids; 3rd base wobble absorbs mutations) | Rigid syntax: a single missing letter or typo halts the compiler with a fatal error. | **Wobble Typo-Tolerance**: Synonyms map to identical opcodes. Minor spelling mistakes are smoothly repaired via Levenshtein edit-distance without halting. |
-| **HexaPhase Overlapping Genes** (Reading 6 concurrent phases from the same sequence) | 1D sequential execution: every routine requires its own separate memory footprint. | **HexaPhase Multiplexing**: Slices any stream into 6 concurrent execution channels (`+0, +1, +2, -0, -1, -2`) for massive space savings. |
-| **Programmed Ribosomal Frameshifting** (Ribosomes slipping tracks at mechanical stress points) | Hard-coded branching requiring bloated if/else logic trees. | **PRF Slipping (`slip(+1)`)**: Dynamically slips the runtime execution track into emergency / alternate subroutines under system load. |
-| **Palindromic Attenuator Hairpins** (Thermodynamic stem-loop mechanical pause gates) | Uncontrolled execution floods and runaway infinite loops. | **Attenuator Gates (`attenuator(threshold)`)**: Built-in thermodynamic rate-limiting and backpressure throttling. |
-| **mRNA Half-Life Decay** (Poly-A tail shortens on each translation until transcript dissolves) | Memory leaks in C/C++; periodic CPU freezes from Garbage Collectors in Java/Python. | **Acme Anvil TTL**: Ephemeral variables carry an auto-decrementing `acme(ttl=N)` timer. Once expired, it vaporizes from RAM with zero memory leaks and 0% GC pauses. |
-| **Lock-and-Key Receptors** (Proteins find targets by 3D physical pocket shape, not pointers) | Fragile numeric memory pointers (`0x7FFF`) and hard-coded network IP endpoints. | **Planetary Shape Dispatch**: Functions bind to elemental and planetary rings (`MERCURY`, `MARS`, `JUPITER`, `VENUS`, `MOON`). Callers emit ring keys to trigger matching handlers. |
-| **p53 DNA Repair Checkpoint** ("Guardian of the genome" catching unrouted sequences) | Unhandled exceptions and crash cascades. | **Tuxedo Mask Watchdog**: Catches unrouted dispatches with a graceful fallback block ("My work here is done!"). |
-| **Cellular Differentiation** (Stem cells differentiating into specialized tissue states) | State evolution and polymorphic typing. | **Sailor Moon MPP (Moon Prism Power)**: `mpp` (or `transform`) explicitly evolves an entity into its specialized form with dedicated behavior. |
+| **Codon Degeneracy** (64 codons map to 20 amino acids) | Rigid syntax: a single missing letter or typo halts the compiler. | **Degenerate Opcode Synonyms & Wobble Tolerance**: Multiple keywords map to the exact same opcode (`var`, `let`, `set` $\rightarrow$ `STORE_VAR`). |
+| **HexaPhase Overlapping Reading Frames** | 1D sequential execution: every routine requires its own separate memory. | **HexaPhase Multiplexing**: Slices any stream into 6 concurrent execution channels (`+0, +1, +2, -0, -1, -2`) for massive space savings. |
+| **Programmed Ribosomal Frameshifting** (Slipping tracks at stress points) | Hard-coded branching requiring bloated if/else logic trees. | **`slip_branch(prob, funcA, funcB)`**: Dynamically slips the runtime execution track into emergency subroutines under system load. |
+| **G-Quadruplex & Attenuator Gates** (Thermodynamic physical barriers) | Uncontrolled execution floods and runaway infinite loops. | **`g4_latch(stress, threshold)`**: Built-in thermodynamic molecular circuit breaker that stalls execution when thresholds are exceeded. |
+| **mRNA Half-Life Decay** (Poly-A tail shortens until transcript dissolves) | Memory leaks in C/C++; periodic CPU freezes from Garbage Collectors in Java/Python. | **Acme Anvil TTL (`acme(ttl=N)`)**: Ephemeral variables carry an auto-decrementing timer. Once expired, it vaporizes from RAM with 0% GC pauses. |
+| **Lock-and-Key Receptors** (Proteins find targets by 3D physical pocket shape) | Fragile numeric memory pointers (`0x7FFF`) and hard-coded network IP endpoints. | **Planetary Shape Dispatch**: Functions bind to elemental rings (`MARS`, `MOON`). Callers emit ring keys to trigger matching handlers. |
+| **p53 DNA Repair Checkpoint** ("Guardian of the genome") | Unhandled exceptions and crash cascades. | **Tuxedo Mask Watchdog (`fallback { ... }`)**: Catches unrouted dispatches with a graceful fallback block ("My work here is done!"). |
 
 ---
 
 ## ⚡ Quickstart
 
-### 1. Installation (100% Free & MIT/Public Domain)
+### 1. Installation (Free & MIT/Fair-Source)
 ```powershell
 pip install -e D:\smc_lang\
 ```
 
-### 2. Launching the Live Interactive REPL
+### 2. Launching the Interactive REPL
 ```powershell
 smc
 # or: python -m smc.cli repl
 ```
 
-### 3. Running an SMC Script
+### 3. Running an SMC Script (Fast Bytecode Default)
 ```powershell
-python -m smc.cli run D:\smc_lang\examples\advanced_functions.smc
+smc run examples/rover_state_machine.smc
 ```
 
-### 4. Running CatDog Dual-Frame Overlapping Code
+### 4. Running in Strict Mode
 ```powershell
-python -m smc.cli catdog D:\smc_lang\examples\catdog_dual_frame.smc
+smc run --strict examples/rover_state_machine.smc
 ```
 
-### 5. Inspecting Repaired Mutations & Tokens
+### 5. Step-Debugging an SMC Script
 ```powershell
-python -m smc.cli tokens D:\smc_lang\examples\sailor_moon_battle.smc
+smc debug examples/rover_state_machine.smc
 ```
 
 ---
 
-## 🎨 Modern Professional Syntax (with Degenerate Aliases)
-
-SMC prioritizes clean, modern, professional keywords, while preserving nostalgic aliases under the hood:
+## 🤖 Mars Planetary Rover Example (`examples/rover_state_machine.smc`)
 
 ```smc
-experiment "Planetary_Defense"
-
-# 1. Full arithmetic expressions with order of operations (* and / before + and -)
-let enemy_hp = 100
-let attack_power = (15 * 2) - 5   # Evaluates to 25
-
-# 2. Tuxedo Mask watchdog fallback
-fallback {
-    print "Tuxedo Mask throws a red rose! (Graceful fallback executed)"
+# 1. Define Discrete FSM Transition Matrix
+var rover_fsm = {
+    "SLEEP": { "SUNRISE": "CHARGING", "EMERGENCY": "SAFE_MODE" },
+    "CHARGING": { "BATTERY_FULL": "SCIENCE_OPERATIONS", "SUNSET": "SLEEP" },
+    "SCIENCE_OPERATIONS": { "TASK_COMPLETE": "DRIVING", "BATTERY_LOW": "SLEEP" },
+    "DRIVING": { "DESTINATION_REACHED": "SCIENCE_OPERATIONS", "SUNSET": "SLEEP" }
 }
 
-# 3. Planetary Senshi ring binding
-bind(ring="MARS") {
-    print "Sailor Mars: Flame blast triggered!"
-}
+# 2. Simulate Mission Event Stream
+var mission_events = ["SUNRISE", "BATTERY_FULL", "TASK_COMPLETE", "DESTINATION_REACHED", "SUNSET"]
+var mission_result = fsm_run("SLEEP", mission_events, rover_fsm)
 
-# 4. Turn-based combat loop (while loop & conditionals)
-while (enemy_hp > 0) {
-    # Acme Anvil ephemeral shield (auto-vaporizes after 2 cycles without GC pauses)
-    acme(ttl=2) defense_shield = "Active_Barrier"
+print "Execution Path: " + to_json(mission_result["history"])
+print "Final Rover State: " + mission_result["final_state"]
 
-    dispatch "MARS"
-    let enemy_hp = enemy_hp - attack_power
-}
+# 3. Built-in Data & Math Toolkit
+var raw_solar_voltage = 142.5
+var safe_voltage = clamp(raw_solar_voltage, 0.0, 100.0) # Returns 100.0
 
-# 5. Cellular Differentiation via MPP (Moon Prism Power)
-let guardian = "Usagi_Tsukino"
-mpp guardian = "Princess_Serenity" {
-    print "State transformed to royal tier!"
-}
-
-halt
+var sensor_stream = [22.1, 23.4, 21.9, 25.6, 28.0, 24.1]
+var smoothed_windows = window(sensor_stream, 3, 1)      # Slices 3-point rolling windows
+print "Windows: " + to_json(smoothed_windows)
 ```
 
 ---
 
-## 🎭 Why the Names Match the Functions
-
-Every cartoon and anime namesake in SMC was intentionally chosen because its nostalgic pop-culture behavior precisely mirrors its computer science and biological function:
-
-* 📦 **`acme` (Time-To-Live Memory Drop = mRNA Decay)**: In Looney Tunes, Wile E. Coyote orders from Acme Corporation, and an anvil inevitably drops on him from the sky. In SMC, `acme(ttl=N)` sets a countdown timer where an anvil literally drops on your variable, vaporizing it from RAM when its time is up with zero garbage collection pauses.
-* 🌙 **`mpp` (Moon Prism Power = Cellular Differentiation)**: In Sailor Moon, shouting *"Moon Prism Power, Make Up!"* transforms Usagi from a normal schoolgirl into Sailor Moon. In SMC, `mpp var = new_state { ... }` permanently evolves an entity into its higher specialized form with dedicated behavior.
-* 🌹 **`tuxedo` (Tuxedo Mask = Watchdog Fallback)**: In Sailor Moon, whenever a battle goes off-script and danger strikes, Tuxedo Mask mysteriously arrives, throws a red rose to intercept the attack, says *"My work here is done,"* and departs. In SMC, `tuxedo` / `fallback` intercepts unrouted dispatches to prevent crashes.
-* 💍 **`rings` / `dispatch` (Planeteers = Lock-and-Key Receptors)**: In Captain Planet, Kwame, Wheeler, Linka, Gi, and Ma-Ti combine their elemental rings (*"Earth! Fire! Wind! Water! Heart!"*). In SMC, functions bind to receptor rings and dispatch by shape rather than fragile memory pointers.
-* 🐱🐶 **`catdog` (Dual Reading Frames = Overlapping Genes)**: In CatDog, two completely different animals share a single body. In SMC, `catdog` interleaves two completely different programs on the exact same line of code for 2x memory density.
-* 🔴 **`dee_dee` (Mutation Engine = Genetic Mutation Stress Testing)**: Dexter's sister Dee Dee sneaks into the lab asking *"Oooooh, what does THIS button do?!"* In SMC, `dee_dee` blocks inject non-destructive mutations to prove your system's codon wobble fault-tolerance.
-
----
-
-## 🌐 Building Full-Stack Websites in SMC (`serve_http`)
-
-SMC includes a native, high-performance HTTP web server built directly into DexterVM. You can build and host full dynamic websites and REST APIs written 100% in `.smc`:
+## 🌐 Full-Stack Dynamic Web Servers (`serve_http`)
 
 ```smc
 experiment "My_Web_App"
@@ -129,78 +137,29 @@ experiment "My_Web_App"
 fn handle_request(req) {
     let p = req["path"]
 
-    # 1. Homepage with Template Strings
     if (p == "/") {
-        let title = "SMC Web Server"
         return {
             "status": 200,
             "content_type": "text/html",
-            "body": `<h1>Welcome to ${title}!</h1><p>Full-stack dynamic web in .smc!</p>`
+            "body": "<h1>Welcome to SMC Full-Stack Web!</h1>"
         }
     }
 
-    # 2. Ephemeral login session: Zero-Redis session state!
     if (p == "/login") {
         acme(ttl=5) user_auth = "Jason_Token"
         return "<h2>Logged in! Session auto-expires via Acme TTL.</h2>"
     }
 
-    # 3. 1-line JSON API
-    if (p == "/api/status") {
-        return {
-            "status": 200,
-            "content_type": "application/json",
-            "body": to_json({ "status": "ONLINE", "active": true })
-        }
-    }
-
-    return { "status": 404, "body": "404: Tuxedo Mask could not find page" }
+    return { "status": 404, "body": "404: Not Found" }
 }
 
 print "Server online at http://localhost:3000..."
 serve_http(3000, "handle_request")
 ```
 
-Run it with:
-```powershell
-python -m smc.cli run examples/smc_web_server.smc
-```
-
----
-
-## ✨ v0.4.0 Developer Ergonomics & Toolkit
-
-* 🪄 **Template Strings:** Interpolate variables and expressions seamlessly using backticks:
-  ```smc
-  let msg = `Hello ${user["name"]}! Level: ${user["lvl"] + 1}`
-  ```
-* ⚡ **Native JSON:** Instant serialization and parsing with `to_json(dict)` and `from_json(str)`.
-* 🎯 **Booleans & Logic:** First-class `true`, `false`, `null`, and logical operators `&&` (`and`), `||` (`or`).
-* 🔢 **Effortless Loops:** `for i in range(1, 10) { ... }`
-* ✂️ **Collection Utilities:** `split(str, sep)`, `join(list, sep)`, `keys(dict)`, `values(dict)`, `contains(coll, item)`.
-* 📁 **Static File Serving:** `serve_file("path/to/asset.css")` with automatic MIME-type detection.
-
----
-
-## 📦 Modular Multi-File Projects (`import`)
-
-Split your codebase into reusable modules, libraries, and route controllers:
-
-```smc
-# In main.smc
-import "modules/math_utils.smc"
-
-let area = circle_area(5)
-print `Area from imported module: ${area}`
-```
-
-SMC handles nested dependencies and features **cycle-safe import guards** to prevent duplicate execution or recursion loops.
-
 ---
 
 ## 🧬 Python Ecosystem Bridge (FFI)
-
-SMC has native access to the **entire Python standard library and 500,000+ PyPI packages**:
 
 ```smc
 # 1. Direct Python function calling
@@ -213,70 +172,21 @@ let stamp = py_call("datetime.datetime.now")
 
 # 3. Dynamic Python evaluation
 let total = py_eval("sum([10, 20, 30, 40])")
-
-# 4. Ephemeral Acme TTL + Cryptography
-acme(ttl=3) auth_token = py_call("secrets.token_hex", 16)
 ```
-
-Fault-tolerant error handling guarantees that missing modules or exceptions log diagnostics without crashing the biological DexterVM process!
-
----
-
-## 🎮 Interactive Live Web Playground
-Experience SMC live in your browser with zero installation:
-👉 **[https://zekvftb.github.io/smc-lang/](https://zekvftb.github.io/smc-lang/)**
-
-Includes a **Virtual Web Browser** inspector where you can click `GET /`, `GET /login`, and `GET /api/status` to test dynamic HTTP servers directly inside the browser playground!
-
----
-
-## 🛠️ Instant Project Scaffolding (`smc init`)
-
-Create a full-stack, modular project in one command:
-
-```powershell
-smc init my_web_app
-cd my_web_app
-smc run main.smc
-```
-
-Generates a clean project structure with web routes, imported modules, static HTML assets, and documentation.
 
 ---
 
 ## 🧪 Automated Testing
-Run the comprehensive test suite:
+Run the full test suite:
 ```powershell
 python -m pytest D:\smc_lang\tests/
 ```
-**All 42 tests pass in 6.7 seconds (including live HTTP socket tests, Python FFI bridge, and modular imports)!**
+**All 64 tests pass with 100% test coverage (Bytecode VM, Strict Mode, Standard Library, Web Sockets, FSM engine, and Biological Primitives)!**
 
 ---
 
-## 🎨 VS Code Syntax Highlighting Extension (`.vsix`)
-
-SMC includes an official VS Code extension for full syntax coloring!
-
-### ⚡ 1-Click Install with `.vsix`:
-```powershell
-code --install-extension editors/vscode/smc-lang-0.6.0.vsix
-```
-
-Or copy the extension folder manually:
-```powershell
-Copy-Item -Recurse D:\smc_lang\editors\vscode "$HOME\.vscode\extensions\smc-lang"
-```
-Reload VS Code (`Ctrl+Shift+P` -> "Developer: Reload Window") and `.smc` files will light up with syntax highlighting.
-
----
-
-## 📜 License & Enterprise Commercial Terms
-
-SMC is distributed under the **SMC Fair-Source License 1.0**:
-
-* 🎓 **100% Free for Individuals, Students, & Non-Commercial Use:** You can learn, play, modify, and build personal or academic projects completely free forever.
-* 🚀 **Small Business Safe Harbor:** 100% free for startups and companies with **gross annual revenues under $1,000,000 USD** and fewer than 10 employees.
-* 🏢 **Enterprise Commercial License:** Commercial use by large entities exceeding the threshold, or use as a paid hosted cloud service, requires an Enterprise Commercial License.
-
-For commercial licensing agreements and enterprise integration inquiries, contact:  
-**Jason Rezek** — [`zekvftb@gmail.com`](mailto:zekvftb@gmail.com)
+## 📜 License & Enterprise Terms
+Distributed under the **SMC Fair-Source License 1.0**:
+* 🎓 **100% Free for Individuals, Students, Researchers, & Non-Commercial Use.**
+* 🚀 **Small Business Safe Harbor:** 100% free for startups with **gross annual revenues under $1,000,000 USD** and fewer than 10 employees.
+* 🏢 **Enterprise Commercial License:** Contact Jason Rezek (`zekvftb@gmail.com`).
