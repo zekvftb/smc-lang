@@ -10,7 +10,7 @@
 ## 1. Formal Grammar Specification (EBNF)
 
 ### 1.1 Lexical Grammar
-```ebnf
+````ebnf
 whitespace      = " " | "\t" | "\r" | "\n" ;
 comment         = "#" , { ? any character except newline ? } , ( "\n" | ? EOF ? ) ;
 letter          = "A" | ... | "Z" | "a" | ... | "z" ;
@@ -23,27 +23,28 @@ integer_lit     = digit , { digit } ;
 float_lit       = digit , { digit } , "." , digit , { digit } ;
 number_lit      = integer_lit | float_lit ;
 
-escape_seq      = "\" , ( "n" | "t" | "r" | "\" | "'" | '"' | "$" | ? backtick ? ) ;
+escape_seq      = "\" , ( "n" | "t" | "r" | "\" | "'" | '"' | "$" | "`" ) ;
 char_single     = escape_seq | ? any character except "'" or "\" ? ;
 char_double     = escape_seq | ? any character except '"' or "\" ? ;
 string_lit      = ( "'" , { char_single } , "'" ) 
                 | ( '"' , { char_double } , '"' ) ;
 
 interp_expr     = "${" , expression , "}" ;
-template_char   = escape_seq | interp_expr | ? any character except backtick or "\" or "$" ? ;
-template_lit    = ? backtick ? , { template_char } , ? backtick ? ;
+template_char   = escape_seq | interp_expr | ? any character except "`" or "\" or "$" ? ;
+template_lit    = "`" , { template_char } , "`" ;
 
 boolean_lit     = "true" | "false" ;
 null_lit        = "null" ;
 literal         = number_lit | string_lit | template_lit | boolean_lit | null_lit ;
 reserved_token  = "." | ";" | "@" | "~" ;
-```
+````
 
 ### 1.2 Lexical & Case-Sensitivity Rules
 1. **Keyword Case-Insensitivity:** All canonical keywords and cartoon synonym tokens are matched case-insensitively (`LET`, `let`, `Let`, `SUGAR`, `sugar`).
 2. **Identifier Case-Sensitivity:** User-defined identifiers (variable names, function names, dictionary keys) are strictly **case-sensitive** (`blossom` $\neq$ `Blossom`).
 3. **Built-in Shadowing:** User-defined variables and function declarations within an active scope shadow standard built-in functions of the same name (e.g. declaring `let len = 5` shadows built-in `len()`).
 4. **Reserved Symbols:** The dot (`.`), semicolon (`;`), at-sign (`@`), and tilde (`~`) tokens are reserved for future namespace and macro extensions. Subscript indexing `dict["key"]` is the canonical member access operator.
+5. **Whitespace & Comment Invariance:** Whitespace characters (`\x20`, `\t`, `\r`, `\n`) and comments (`#` to newline/EOF) are ignored and discarded by the lexer as delimiters, generating zero runtime tokens.
 
 ### 1.3 Expression Grammar (Uniform Postfix Pratt Hierarchy)
 ```ebnf
