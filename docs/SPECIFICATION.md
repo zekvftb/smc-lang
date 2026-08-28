@@ -247,3 +247,91 @@ SMC enforces an 8-level Pratt parsing hierarchy. Subscript indexing (`[]`) and f
 ### 5.7 Lexical & Compatibility Notes (Legacy CatDog Framing)
 * **Legacy Dual-Frame Mode (`catdog`):** For backward compatibility with SMC v0.1.0 dual-frame source files, the `smc catdog <file>.smc` CLI command decomposes the token stream into alternating even (Cat track, Phase +0) and odd (Dog track, Phase +1) subroutines, executing both sequentially.
 
+---
+
+## 6. Execution Modalities & Tooling Reference
+
+SMC source code may be parsed, evaluated, and executed across four standardized execution modalities:
+
+### 6.1 Web Browser & WASM Playground (Zero-Install Execution)
+* **Host URL:** `https://zekvftb.github.io/smc-lang/`
+* **Architecture:** Client-side WebAssembly environment running Pyodide with DexterVM.
+* **Security & Isolation:** 100% in-browser sandboxed execution with zero backend server dependencies and zero user data logging.
+
+### 6.2 Native Command Line Interface (`smc`)
+The canonical SMC CLI toolchain provides complete operational lifecycle management:
+```powershell
+# 1. Run a standalone SMC script
+smc run path/to/program.smc
+
+# 2. Launch the interactive REPL shell
+smc repl
+
+# 3. Execute dual-frame overlapping bytecode (CatDog mode)
+smc catdog path/to/dual_track.smc
+
+# 4. Inspect token stream and automated typo repairs
+smc tokens path/to/program.smc
+
+# 5. Scaffold a new production project directory
+smc init my_app
+```
+
+### 6.3 Host Embedding & Python SDK Integration
+SMC can be embedded directly into existing scientific and data processing applications:
+```python
+from smc.lexer import SmcLexer
+from smc.parser import SmcParser
+from smc.vm import DexterVM
+
+# Tokenize and parse source code
+source_code = """
+let dataset = [10, 20, 30]
+let total = 0
+for val in dataset {
+    total += val
+}
+"""
+tokens = SmcLexer(source_code).tokenize()
+ast = SmcParser(tokens).parse()
+
+# Execute within DexterVM
+vm = DexterVM()
+result = vm.run(ast)
+
+# Access computed variables from host
+print(result["final_variables"]["total"])  # 60
+```
+
+### 6.4 IDE Syntax Highlighting & Grammar
+The SMC language provides a formal TextMate grammar definition (`smc.tmLanguage.json`) compatible with Visual Studio Code, Cursor, and VSCodium, delivering real-time keyword highlighting, bracket matching, and template literal interpolation coloring.
+
+---
+
+## 7. Formal Language Conformance & Implementation Standards
+
+To ensure cross-platform reproducibility and guarantee that alternative compiler and interpreter implementations behave identically to DexterVM, compliant runtimes must satisfy the following five invariants:
+
+### 7.1 Grammatical & Operator Invariant
+1. All compliant parsers must enforce the exact 8-tier Pratt precedence hierarchy defined in Section 3.
+2. Function invocations (`()`) and subscript indexing (`[]`) must operate as uniform left-associative postfix operators with equal precedence (Tier 7).
+
+### 7.2 Memory & State Invariant
+1. **Activation Stack Isolation:** Function calls must create an isolated activation frame. Local variables declared inside a function body must not leak into parent or global environments upon function return.
+2. **Monotonic Ephemeral Decay:** Variables declared with `acme(ttl=k)` must decrement their counter $\tau$ on every discrete execution step and upon receiving an HTTP request, vaporizing completely when $\tau \le 0$.
+3. **Phase Storage:** The reading phase register $\Phi_{phase} \in \{0, 1, 2\}$ must initialize to $0$, expose its value via `current_phase`, and wrap modulo 3 upon `slip(k)`.
+
+### 7.3 Type Coercion & Arithmetic Fault Invariant
+1. **Safe Division:** Division by zero (`a / 0`) or modulo by zero (`a % 0`) must never raise a fatal process termination exception; compliant runtimes must evaluate the expression to `0` and emit a diagnostic warning to stdout.
+2. **Safe Uninitialized Reads:** Reading unassigned variables must deterministically evaluate to numeric `0`, string `""`, or boolean `false`.
+3. **Out-of-Bounds Subscripts:** Writing to an out-of-bounds list index must be safely trapped and ignored without terminating program execution.
+
+### 7.4 Content-Addressable Ring Normalization Invariant
+1. All ring keys in `bind(ring=expr)` and `dispatch expr` must undergo uppercase string normalization ($\text{key} \leftarrow \text{upper}(\text{str}(\text{eval}(expr)))$).
+2. If `dispatch` targets an unmapped ring key, the runtime must invoke the `fallback` handler if present, or continue execution silently if absent.
+
+### 7.5 Typo-Tolerance & Degeneracy Rules
+1. Keyword synonyms (e.g. `SUGAR`, `SPICE`, `LET`, `SET`, `VAR`) must map to identical AST statement representations.
+2. Lexical Levenshtein edit-distance repair must be strictly bounded: length $\le 4 \implies d=1$; $5 \le \text{length} \le 6 \implies d=1$; $\text{length} \ge 7 \implies d=2$.
+3. Built-in functions (`len`, `push`, `pop`, `str`, `int`, etc.) and single-character identifiers must never undergo automatic mutation repair.
+
