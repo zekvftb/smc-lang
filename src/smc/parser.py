@@ -173,6 +173,12 @@ class MutateBlockNode(AstNode):
 
 
 @dataclass
+class ImportNode(AstNode):
+    """Import an external SMC module file: import 'path/to/mod.smc'"""
+    path: str
+
+
+@dataclass
 class HaltNode(AstNode):
     pass
 
@@ -680,7 +686,13 @@ class SmcParser:
                     self._advance()
             return MutateBlockNode(body=body_stmts)
 
-        # 16. HALT
+        # 16. IMPORT: import "path/to/mod.smc"
+        if self._match_opcode(Opcode.IMPORT):
+            self._advance()
+            path_tok = self._advance()
+            return ImportNode(path=str(path_tok.value))
+
+        # 17. HALT
         if self._match_opcode(Opcode.HALT):
             self._advance()
             return HaltNode()

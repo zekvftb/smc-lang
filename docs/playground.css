@@ -258,3 +258,68 @@ main {
 .item-key { color: var(--accent-cyan); }
 .item-val { color: var(--text-main); font-weight: bold; }
 .item-ttl { color: #ff3366; font-size: 0.75rem; }
+
+/* Virtual Browser Panel */
+.browser-bar {
+    display: flex;
+    gap: 0.4rem;
+    margin: 0.5rem 0;
+}
+
+.browser-bar input {
+    flex: 1;
+    background: #0a0c10;
+    border: 1px solid var(--border-color);
+    color: var(--accent-cyan);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    padding: 0.3rem 0.5rem;
+    border-radius: 4px;
+}
+
+.browser-routes {
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+}
+
+.route-btn {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.7rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--accent-green);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.route-btn:hover {
+    border-color: var(--accent-green);
+    background: rgba(57, 255, 20, 0.1);
+}
+
+#browser-preview-frame {
+    background: #05070a;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.5rem;
+    min-height: 140px;
+    max-height: 250px;
+    overflow-y: auto;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+}
+
+#browser-response-header {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding-bottom: 0.3rem;
+    margin-bottom: 0.4rem;
+}
+
+#browser-response-status {
+    color: var(--accent-green);
+    font-weight: bold;
+}

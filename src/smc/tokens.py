@@ -75,6 +75,7 @@ class Opcode(str, Enum):
     FALLBACK = "FALLBACK"
     PRINT = "PRINT"
     MUTATE = "MUTATE"
+    IMPORT = "IMPORT"
     HALT = "HALT"
 
 
@@ -128,6 +129,9 @@ OPCODE_SYNONYMS: dict[Opcode, list[str]] = {
     ],
     Opcode.MUTATE: [
         "MUTATE", "DEE_DEE_MUTATION", "DEE_DEE_BUTTON", "OOPS_MUTATION", "RADIOACTIVE_SPIDER"
+    ],
+    Opcode.IMPORT: [
+        "IMPORT", "INCLUDE", "REQUIRE", "LOAD_MODULE", "PLASMID_INJECT", "TRANSFECT"
     ],
     Opcode.HALT: [
         "HALT", "EXIT", "THATS_ALL_FOLKS", "COWABUNGA", "FIN"

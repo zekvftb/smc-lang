@@ -34,6 +34,7 @@ from smc.parser import (
     FunctionDefNode,
     HaltNode,
     IfNode,
+    ImportNode,
     IndexAccessNode,
     IndexAssignNode,
     ListNode,
@@ -77,6 +78,8 @@ class DexterVM:
         self.anvils_dropped: int = 0
         self.mutations_survived: int = 0
         self.halted: bool = False
+        self.imported_modules: set[Path] = set()
+        self.current_file: Path | None = None
         self.rng = random.Random(seed)
 
     def _tick_acme_ttls(self) -> None:
@@ -675,7 +678,37 @@ class DexterVM:
                     break
                 self.execute_node(stmt)
 
-        # 16. HALT
+        # 16. IMPORT (Module Loading & Transfection)
+        elif isinstance(node, ImportNode):
+            mod_path_str = node.path
+            base_dir = self.current_file.parent if self.current_file else Path.cwd()
+            target_path = (base_dir / mod_path_str).resolve()
+            if not target_path.exists() and not mod_path_str.endswith(".smc"):
+                target_path = (base_dir / f"{mod_path_str}.smc").resolve()
+
+            if target_path in self.imported_modules:
+                return  # Cycle / redundant import guard
+
+            if not target_path.exists():
+                self.stdout.append(f"[IMPORT_ERROR] Cannot find module '{mod_path_str}' at '{target_path}'.")
+                return
+
+            self.imported_modules.add(target_path)
+            try:
+                content = target_path.read_text(encoding="utf-8")
+                from smc.lexer import SmcLexer
+                from smc.parser import SmcParser
+                sub_tokens = SmcLexer(content).tokenize()
+                sub_ast = SmcParser(sub_tokens, content).parse()
+                prev_file = self.current_file
+                self.current_file = target_path
+                self.run(sub_ast)
+                self.current_file = prev_file
+                self.stdout.append(f"[IMPORT] Successfully loaded module: {target_path.name}")
+            except Exception as e:
+                self.stdout.append(f"[IMPORT_ERROR] Failed to execute module '{mod_path_str}': {e}")
+
+        # 17. HALT
         elif isinstance(node, HaltNode):
             self.halted = True
             self.stdout.append("[THATS_ALL_FOLKS] [HALT] Program reached clean termination.")

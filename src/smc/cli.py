@@ -34,6 +34,7 @@ def run_file(file_path: Path | str) -> None:
     ast = parser.parse()
 
     vm = DexterVM()
+    vm.current_file = path.resolve()
     res = vm.run(ast)
 
     print("\n--- DEXTER_VM EXECUTION OUTPUT ---")

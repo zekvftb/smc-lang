@@ -1,0 +1,24 @@
+# =============================================================
+# SMC SAMPLE: Multi-File Project with Modular Imports
+# =============================================================
+# Run with:
+#   python -m smc.cli run D:\smc_lang\examples\modular_demo.smc
+# =============================================================
+
+experiment "Dexter_Modular_Laboratory"
+
+# Import external module
+import "modules/math_utils.smc"
+
+print "=== SMC MODULAR ARCHITECTURE DEMO ==="
+print `Imported PI constant: ${PI}`
+
+let r = 5
+let area = circle_area(r)
+print `Area of circle (radius ${r}): ${area}`
+
+let p = calculate_power(2, 8)
+print `2^8 calculated from imported module: ${p}`
+
+print "Modular import successfully executed!"
+halt

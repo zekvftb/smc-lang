@@ -25,7 +25,13 @@ const OPCODE_SYNONYMS = {
     FALLBACK: ["FALLBACK", "TUXEDO_MASK", "CATCH", "DEFAULT_HANDLER", "ROSE_THROW"],
     PRINT: ["PRINT", "EMIT", "SAY", "SHOUT", "KAMEHAMEHA", "HADOUKEN", "COWABUNGA_NEWS"],
     MUTATE: ["MUTATE", "DEE_DEE_MUTATION", "DEE_DEE_BUTTON", "OOPS_MUTATION", "RADIOACTIVE_SPIDER"],
+    IMPORT: ["IMPORT", "INCLUDE", "REQUIRE", "LOAD_MODULE", "PLASMID_INJECT", "TRANSFECT"],
     HALT: ["HALT", "EXIT", "THATS_ALL_FOLKS", "COWABUNGA", "FIN"]
+};
+
+const VIRTUAL_FS = {
+    "math_utils.smc": `let PI = 3.14159265\nfn square(x) { return x * x }\nfn power(b, e) {\n    let res = 1\n    for i in range(0, e) { res *= b }\n    return res\n}\n`,
+    "models/user.smc": `let DEFAULT_ROLE = "Scientist"\nfn create_user(name) {\n    return { "name": name, "role": DEFAULT_ROLE, "access": true }\n}\n`
 };
 
 const KEYWORD_TO_OPCODE = {};
@@ -719,6 +725,13 @@ class SmcParser {
             }
         }
 
+        // IMPORT: import "module.smc"
+        if (this.matchOpcode("IMPORT")) {
+            this.advance();
+            const path = this.advance().value;
+            return { type: "Import", path: String(path) };
+        }
+
         // HALT
         if (this.matchOpcode("HALT")) {
             this.advance();
@@ -748,6 +761,9 @@ class DexterVM {
         this.executionSteps = 0;
         this.anvilsDropped = 0;
         this.halted = false;
+        this.importedModules = new Set();
+        this.serverPort = null;
+        this.serverHandler = null;
     }
 
     tickAcmeTtls() {
@@ -865,6 +881,12 @@ class DexterVM {
                 if (Array.isArray(args[0]) || typeof args[0] === "string") return args[0].includes(args[1]);
                 if (args[0] && typeof args[0] === "object") return args[1] in args[0];
                 return false;
+            }
+            if (fnLower === "serve_http") {
+                this.serverPort = args[0] || 3000;
+                this.serverHandler = String(args[1] || "handle_request");
+                this.stdout.push(`[HTTP_SERVER] Laboratory server active on port ${this.serverPort}! Virtual Browser connected.`);
+                return true;
             }
 
             // User function
@@ -1025,10 +1047,61 @@ class DexterVM {
             this.fallbackHandler = node.body;
         } else if (node.type === "Print") {
             this.stdout.push(String(this.evalExpr(node.expr)));
+        } else if (node.type === "Import") {
+            const path = node.path;
+            if (this.importedModules.has(path)) return;
+            const basename = path.replace(/^.*[\\/]/, "");
+            const code = VIRTUAL_FS[path] || VIRTUAL_FS[basename];
+            if (code) {
+                this.importedModules.add(path);
+                const subLexer = new SmcLexer(code);
+                const subToks = subLexer.tokenize();
+                const subParser = new SmcParser(subToks);
+                const subAst = subParser.parse();
+                this.run(subAst);
+                this.stdout.push(`[IMPORT] Successfully loaded virtual module: ${basename}`);
+            } else {
+                this.stdout.push(`[IMPORT_ERROR] Cannot find module '${path}' in virtual file system.`);
+            }
         } else if (node.type === "Halt") {
             this.halted = true;
             this.stdout.push("[THATS_ALL_FOLKS] [HALT] Program reached clean termination.");
         }
+    }
+
+    dispatchSimulatedRequest(method, path, body = "") {
+        this.executionSteps++;
+        this.tickAcmeTtls();
+
+        const reqObj = {
+            method: method.toUpperCase(),
+            path: path,
+            headers: { "user-agent": "SMC-Virtual-Browser/1.0" },
+            body: body
+        };
+
+        const handlerName = this.serverHandler || "handle_request";
+        if (this.functions[handlerName]) {
+            const response = this.callFunction(handlerName, [reqObj]);
+            if (response && typeof response === "object" && !Array.isArray(response)) {
+                return {
+                    status: response.status || 200,
+                    contentType: response.content_type || "text/html; charset=utf-8",
+                    body: response.body !== undefined ? response.body : ""
+                };
+            }
+            return {
+                status: 200,
+                contentType: "text/html; charset=utf-8",
+                body: String(response)
+            };
+        }
+
+        return {
+            status: 404,
+            contentType: "text/html; charset=utf-8",
+            body: `<h1>404 Not Found</h1><p>Handler '${handlerName}' not registered in experiment.</p>`
+        };
     }
 
     run(program) {

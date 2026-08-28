@@ -215,7 +215,26 @@ print `User: ${back["name"]} (Lvl ${back["level"]})`
 
 ---
 
-## 6. The Interactive Live Lab Shell (REPL)
+## 6. Modular Multi-File Architecture (`import`)
+
+SMC projects can be modularized across multiple `.smc` files:
+
+```smc
+# In main.smc
+import "modules/math_utils.smc"
+import "routes/api.smc"
+
+let area = circle_area(10)
+print `Computed area: ${area}`
+```
+
+* **Relative Resolution:** Paths resolve relative to the importing file.
+* **Cycle Prevention:** A built-in import registry guarantees modules are only executed once, preventing circular reference lockups.
+* **Codon Wobble:** Synonyms like `include`, `require`, and `load_module` are automatically supported.
+
+---
+
+## 7. The Interactive Live Lab Shell (REPL)
 
 Instead of running files, you can experiment in a live, interactive DexterVM shell:
 

@@ -11,7 +11,7 @@
         <div class="logo-group">
             <span class="logo-badge">SMC</span>
             <h2>Saturday Morning Cartoons</h2>
-            <span class="badge badge-cyan">v0.2.0</span>
+            <span class="badge badge-cyan">v0.5.0</span>
             <span class="badge badge-green">In-Browser VM</span>
         </div>
         <div class="header-links">
@@ -24,11 +24,13 @@
     <div class="control-bar">
         <label for="sample-select" style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted);">Lab Presets:</label>
         <select id="sample-select">
-            <option value="rpg">Townsville RPG Battle (Dicts, Loops, Buffs)</option>
-            <option value="sailor">Sailor Moon Battle (Watchdog, Transformations)</option>
-            <option value="catdog">CatDog Multi-Framing (2 Programs in 1 Line)</option>
-            <option value="acme">Acme Anvil TTL (mRNA Memory Decay)</option>
-            <option value="hello">Hello Toon World (Minimal)</option>
+            <option value="web_server">🌐 Full-Stack Web Server (serve_http, to_json, Templates)</option>
+            <option value="modular">📦 Modular Multi-File Import (import 'math_utils.smc')</option>
+            <option value="rpg">⚔️ Townsville RPG Battle (Dicts, Loops, Buffs)</option>
+            <option value="sailor">🌙 Sailor Moon Battle (Watchdog, Transformations)</option>
+            <option value="catdog">🐱🐶 CatDog Multi-Framing (2 Programs in 1 Line)</option>
+            <option value="acme">💥 Acme Anvil TTL (mRNA Memory Decay)</option>
+            <option value="hello">👋 Hello Toon World (Minimal)</option>
         </select>
 
         <button id="btn-run" class="btn-primary">▶ Run Experiment</button>
@@ -79,6 +81,28 @@
                     <div class="inspector-title">Registered Functions</div>
                     <div id="fn-inspector"><span style="color: var(--text-muted);">None active</span></div>
                 </div>
+
+                <!-- Virtual Web Browser Preview -->
+                <div class="inspector-section" id="virtual-browser-section">
+                    <div class="inspector-title" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>🌐 Virtual Web Browser</span>
+                        <span id="server-status-badge" class="badge badge-cyan" style="font-size: 0.65rem;">Ready</span>
+                    </div>
+                    <div class="browser-bar">
+                        <input type="text" id="browser-url-input" value="/" placeholder="Route e.g. / or /api/status" />
+                        <button id="btn-browser-go" class="btn-primary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">Go</button>
+                    </div>
+                    <div class="browser-routes">
+                        <button class="route-btn" data-path="/">GET /</button>
+                        <button class="route-btn" data-path="/about">GET /about</button>
+                        <button class="route-btn" data-path="/login">GET /login</button>
+                        <button class="route-btn" data-path="/api/status">GET /api/status</button>
+                    </div>
+                    <div id="browser-preview-frame">
+                        <div id="browser-response-header">Status: <span id="browser-response-status">200 OK</span></div>
+                        <div id="browser-response-body" style="color: var(--text-muted); font-size: 0.75rem;">Click "Run Experiment" or any route button above to preview live HTTP response!</div>
+                    </div>
+                </div>
             </div>
         </section>
     </main>
@@ -86,6 +110,85 @@
     <script src="playground.js"></script>
     <script>
         const PRESETS = {
+            web_server: `# =============================================================
+# SMC SAMPLE: Full-Stack Web Server (DexterVM Native HTTP)
+# =============================================================
+experiment "Dexter_Laboratory_Web_Server"
+
+let server_visits = 0
+
+fn handle_request(req) {
+    let p = req["path"]
+    let m = req["method"]
+    server_visits += 1
+
+    print \`[HTTP] Incoming \${m} request to: \${p}\`
+
+    # 1. Homepage Route (/) with Template Strings
+    if (p == "/") {
+        let title = "SMC Laboratory Server"
+        return {
+            "status": 200,
+            "content_type": "text/html",
+            "body": \`<h1>\${title}</h1><p>Full-Stack Web running in DexterVM!</p><p>Total requests: <b>\${server_visits}</b></p>\`
+        }
+    }
+
+    # 2. About Route (/about)
+    if (p == "/about") {
+        return {
+            "status": 200,
+            "content_type": "text/html",
+            "body": "<h2>Architecture</h2><p>DNA mechanics + Computer Science in 1 runtime.</p>"
+        }
+    }
+
+    # 3. Ephemeral Login Route (/login) - Zero-Redis Session!
+    if (p == "/login") {
+        acme(ttl=5) session_token = "Lab_Session_Jason_Authorized"
+        return {
+            "status": 200,
+            "content_type": "text/html",
+            "body": \`<h3>Logged in! Session Token: <code>\${session_token}</code></h3><p>Expires via Acme TTL in 5 requests.</p>\`
+        }
+    }
+
+    # 4. JSON API Route (/api/status) - 1-Line Native to_json()
+    if (p == "/api/status") {
+        return {
+            "status": 200,
+            "content_type": "application/json",
+            "body": to_json({ "status": "ONLINE", "version": "0.5.0", "requests": server_visits })
+        }
+    }
+
+    return { "status": 404, "body": "404: Tuxedo Mask could not find route" }
+}
+
+print "Laboratory Web Server Active! Use the Virtual Browser on the right to test routes."
+serve_http(3000, "handle_request")`,
+
+            modular: `# =============================================================
+# SMC SAMPLE: Multi-File Project with Modular Imports
+# =============================================================
+experiment "Dexter_Modular_Laboratory"
+
+# Import external virtual module
+import "math_utils.smc"
+
+print "=== SMC MODULAR ARCHITECTURE ==="
+print \`Imported PI constant: \${PI}\`
+
+let r = 6
+let area = PI * square(r)
+print \`Calculated Circle Area (r=\${r}): \${area}\`
+
+let pow_val = power(2, 6)
+print \`2^6 from imported helper: \${pow_val}\`
+
+print "Modular import successfully executed!"
+halt`,
+
             rpg: `# =============================================================
 # SMC SAMPLE: Power RPG Battle Simulator
 # =============================================================
@@ -248,7 +351,7 @@ halt`
         const select = document.getElementById("sample-select");
 
         // Load default preset
-        editor.value = PRESETS.rpg;
+        editor.value = PRESETS.web_server;
 
         select.addEventListener("change", (e) => {
             if (PRESETS[e.target.value]) {
@@ -267,31 +370,25 @@ halt`
             }
         });
 
-        function appendLog(line) {
-            const div = document.createElement("div");
-            div.className = "log-line";
-
-            if (line.includes("[ACME_ANVIL]")) div.className += " log-anvil";
-            else if (line.includes("[DEXTER_VM]")) div.className += " log-lab";
-            else if (line.includes("[CAPTAIN_PLANET]")) div.className += " log-planet";
-            else if (line.includes("[MOON_PRISM_POWER]") || line.includes("[MPP]")) div.className += " log-moon";
-            else if (line.includes("[TUXEDO_MASK]")) div.className += " log-tuxedo";
-
-            div.textContent = line;
-            terminal.appendChild(div);
+        function appendLog(text) {
+            const line = document.createElement("div");
+            line.className = "log-line";
+            line.textContent = text;
+            terminal.appendChild(line);
             terminal.scrollTop = terminal.scrollHeight;
         }
 
         function updateInspector(res) {
-            // TTL Memory
+            // TTL
             const ttlKeys = Object.keys(res.ttlMemory);
             if (ttlKeys.length === 0) {
-                ttlInspector.innerHTML = '<span style="color: var(--text-muted);">None active (decayed)</span>';
+                ttlInspector.innerHTML = '<span style="color: var(--text-muted);">None active</span>';
             } else {
                 ttlInspector.innerHTML = ttlKeys.map(k => `
                     <div class="item-row">
                         <span class="item-key">${k}</span>
-                        <span class="item-ttl">${res.ttlMemory[k].ttl} ticks left</span>
+                        <span class="item-val">${JSON.stringify(res.ttlMemory[k].value)}</span>
+                        <span class="item-ttl">TTL: ${res.ttlMemory[k].ttl}</span>
                     </div>
                 `).join("");
             }
@@ -321,12 +418,15 @@ halt`
             }
         }
 
+        let activeVm = null;
+
         function runCode(tokens) {
             terminal.innerHTML = "";
             const parser = new window.SmcEngine.SmcParser(tokens);
             const ast = parser.parse();
             const vm = new window.SmcEngine.DexterVM();
             const res = vm.run(ast);
+            activeVm = vm;
 
             for (const line of res.stdout) {
                 appendLog(line);
@@ -334,7 +434,65 @@ halt`
 
             stats.textContent = `Steps: ${res.steps} | Anvils Dropped: ${res.anvils}`;
             updateInspector(res);
+
+            const badge = document.getElementById("server-status-badge");
+            if (vm.serverPort || vm.functions["handle_request"]) {
+                badge.textContent = `Listening :${vm.serverPort || 3000}`;
+                badge.className = "badge badge-green";
+                // Automatically perform initial preview request
+                handleBrowserRequest("/");
+            } else {
+                badge.textContent = "Offline";
+                badge.className = "badge badge-cyan";
+            }
         }
+
+        function escapeHtml(str) {
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function handleBrowserRequest(path) {
+            if (!activeVm) {
+                document.getElementById("browser-response-body").innerHTML =
+                    '<span style="color: #ff3366;">Error: Click "Run Experiment" first to boot the server!</span>';
+                return;
+            }
+
+            document.getElementById("browser-url-input").value = path;
+            const res = activeVm.dispatchSimulatedRequest("GET", path);
+            const statusEl = document.getElementById("browser-response-status");
+            statusEl.textContent = `${res.status} ${res.status === 200 ? 'OK' : 'Not Found'}`;
+            statusEl.style.color = res.status === 200 ? 'var(--accent-green)' : '#ff3366';
+
+            const bodyEl = document.getElementById("browser-response-body");
+            if (res.contentType && res.contentType.includes("json")) {
+                bodyEl.innerHTML = `<pre style="color: #00f0ff; margin: 0; font-size: 0.75rem;">${escapeHtml(res.body)}</pre>`;
+            } else {
+                bodyEl.innerHTML = res.body;
+            }
+
+            // Sync cell memory inspector with simulated request updates
+            updateInspector({
+                steps: activeVm.executionSteps,
+                anvils: activeVm.anvilsDropped,
+                variables: { ...activeVm.variables },
+                ttlMemory: { ...activeVm.ttlMemory },
+                functions: Object.keys(activeVm.functions)
+            });
+            stats.textContent = `Steps: ${activeVm.executionSteps} | Anvils Dropped: ${activeVm.anvilsDropped}`;
+        }
+
+        document.querySelectorAll(".route-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const path = btn.getAttribute("data-path");
+                handleBrowserRequest(path);
+            });
+        });
+
+        document.getElementById("btn-browser-go").addEventListener("click", () => {
+            const path = document.getElementById("browser-url-input").value.trim() || "/";
+            handleBrowserRequest(path);
+        });
 
         document.getElementById("btn-run").addEventListener("click", () => {
             const lexer = new window.SmcEngine.SmcLexer(editor.value);
@@ -364,6 +522,10 @@ halt`
             ttlInspector.innerHTML = '<span style="color: var(--text-muted);">None active</span>';
             varInspector.innerHTML = '<span style="color: var(--text-muted);">None active</span>';
             fnInspector.innerHTML = '<span style="color: var(--text-muted);">None active</span>';
+            activeVm = null;
+            document.getElementById("server-status-badge").textContent = "Offline";
+            document.getElementById("browser-response-body").innerHTML =
+                '<span style="color: var(--text-muted); font-size: 0.75rem;">Server cleared. Click "Run Experiment" to start.</span>';
         });
 
         // Run default on load

@@ -176,12 +176,36 @@ python -m smc.cli run examples/smc_web_server.smc
 
 ---
 
+## 📦 Modular Multi-File Projects (`import`)
+
+Split your codebase into reusable modules, libraries, and route controllers:
+
+```smc
+# In main.smc
+import "modules/math_utils.smc"
+
+let area = circle_area(5)
+print `Area from imported module: ${area}`
+```
+
+SMC handles nested dependencies and features **cycle-safe import guards** to prevent duplicate execution or recursion loops.
+
+---
+
+## 🎮 Interactive Live Web Playground
+Experience SMC live in your browser with zero installation:
+👉 **[https://zekvftb.github.io/smc-lang/](https://zekvftb.github.io/smc-lang/)**
+
+Includes a **Virtual Web Browser** inspector where you can click `GET /`, `GET /login`, and `GET /api/status` to test dynamic HTTP servers directly inside the browser playground!
+
+---
+
 ## 🧪 Automated Testing
 Run the comprehensive test suite:
 ```powershell
 python -m pytest D:\smc_lang\tests/
 ```
-**All 33 tests pass in 6.7 seconds (including live HTTP socket tests)!**
+**All 37 tests pass in 6.8 seconds (including live HTTP socket tests and modular imports)!**
 
 ---
 

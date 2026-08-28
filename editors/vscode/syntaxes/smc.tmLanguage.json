@@ -54,7 +54,7 @@
     },
     {
       "name": "keyword.control.smc",
-      "match": "\\b(?i)(if|else|while|for|in|fn|return|halt|exit|transform|fallback)\\b"
+      "match": "\\b(?i)(if|else|while|for|in|fn|return|import|include|require|load_module|halt|exit|transform|fallback)\\b"
     },
     {
       "name": "keyword.declaration.smc",

@@ -1,0 +1,17 @@
+# =============================================================
+# SMC MODULE: Math & Geometry Helpers
+# =============================================================
+
+let PI = 3.14159265
+
+fn circle_area(radius) {
+    return PI * radius * radius
+}
+
+fn calculate_power(base, exponent) {
+    let result = 1
+    for i in range(0, exponent) {
+        result *= base
+    }
+    return result
+}
