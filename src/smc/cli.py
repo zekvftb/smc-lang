@@ -25,7 +25,7 @@ from smc.compiler import BytecodeCompiler
 from smc.vm import DexterVM
 
 
-def run_file(file_path: Path | str, strict: bool = False, use_bytecode: bool = False) -> None:
+def run_file(file_path: Path | str, strict: bool = False, use_ast: bool = False) -> None:
     path = Path(file_path)
     if not path.is_file():
         print(f"Error: File not found at '{path}'")
@@ -42,21 +42,8 @@ def run_file(file_path: Path | str, strict: bool = False, use_bytecode: bool = F
     parser = SmcParser(tokens)
     ast = parser.parse()
 
-    if use_bytecode:
-        compiler = BytecodeCompiler()
-        chunk = compiler.compile(ast)
-        b_vm = BytecodeVM()
-        res = b_vm.run(chunk)
-
-        print("\n--- BYTECODE_VM (FAST STACK) OUTPUT ---")
-        for line in res["stdout"]:
-            try:
-                print(line)
-            except UnicodeEncodeError:
-                print(line.encode(sys.stdout.encoding or "utf-8", errors="replace").decode(sys.stdout.encoding or "utf-8"))
-        print("---------------------------------------\n")
-        print(f"Instructions Executed: {res['instructions_executed']:,} | Mode: Linear Bytecode Stack VM")
-    else:
+    if use_ast:
+        # Legacy AST Tree-Walker mode
         vm = DexterVM()
         vm.current_file = path.resolve()
         res = vm.run(ast)
@@ -69,6 +56,21 @@ def run_file(file_path: Path | str, strict: bool = False, use_bytecode: bool = F
                 print(line.encode(sys.stdout.encoding or "utf-8", errors="replace").decode(sys.stdout.encoding or "utf-8"))
         print("-------------------------------------\n")
         print(f"Steps: {res['execution_steps']} | Anvils Dropped: {res['anvils_dropped']} | Mutations Survived: {res['mutations_survived']}")
+    else:
+        # Default: High-Speed Linear Bytecode Stack VM
+        compiler = BytecodeCompiler()
+        chunk = compiler.compile(ast)
+        b_vm = BytecodeVM()
+        res = b_vm.run(chunk)
+
+        print("\n--- SMC (BYTECODE VM) OUTPUT ---")
+        for line in res["stdout"]:
+            try:
+                print(line)
+            except UnicodeEncodeError:
+                print(line.encode(sys.stdout.encoding or "utf-8", errors="replace").decode(sys.stdout.encoding or "utf-8"))
+        print("--------------------------------\n")
+        print(f"Instructions Executed: {res['instructions_executed']:,} | Engine: Linear Bytecode Stack VM")
 
 
 def disassemble_file(file_path: Path | str, strict: bool = False) -> None:
@@ -360,10 +362,10 @@ def main() -> None:
     init_parser.add_argument("name", type=str, nargs="?", default="my_smc_app", help="Name of project to create")
 
     # run command
-    run_parser = subparsers.add_parser("run", help="Execute an SMC script")
+    run_parser = subparsers.add_parser("run", help="Execute an SMC script (default: fast Bytecode VM)")
     run_parser.add_argument("file", type=str, help="Path to .smc file")
     run_parser.add_argument("--strict", action="store_true", help="Enforce exact keyword matching with zero fuzzy repairs")
-    run_parser.add_argument("-b", "--bytecode", action="store_true", help="Execute using fast linear Bytecode Stack VM")
+    run_parser.add_argument("--ast", action="store_true", help="Use legacy AST tree-walker instead of default Bytecode VM")
 
     # dis command (disassemble bytecode)
     dis_parser = subparsers.add_parser("dis", help="Disassemble an SMC script into linear VM bytecode")
@@ -389,7 +391,7 @@ def main() -> None:
     elif args.command == "init":
         init_project(args.name)
     elif args.command == "run":
-        run_file(args.file, strict=args.strict, use_bytecode=args.bytecode)
+        run_file(args.file, strict=args.strict, use_ast=args.ast)
     elif args.command == "dis":
         disassemble_file(args.file, strict=args.strict)
     elif args.command == "debug":

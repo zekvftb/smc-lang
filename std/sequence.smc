@@ -1,0 +1,22 @@
+# ==============================================================================
+# SMC Standard Library: Sequence Analysis & Signal Processing (std/sequence.smc)
+# ==============================================================================
+
+func gc_content_pct(seq) {
+    if len(seq) == 0 {
+        return 0.0
+    }
+    var g_count = count_matches(seq, "G") + count_matches(seq, "g")
+    var c_count = count_matches(seq, "C") + count_matches(seq, "c")
+    var total_gc = g_count + c_count
+    var ratio = (total_gc * 100.0) / len(seq)
+    return round(ratio, 2)
+}
+
+func extract_codons(seq, offset) {
+    return hexaphase_window(seq, "+" + str(offset), 3)
+}
+
+func count_motifs(seq, motif) {
+    return count_matches(seq, motif)
+}

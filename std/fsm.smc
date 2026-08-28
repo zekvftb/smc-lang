@@ -1,0 +1,23 @@
+# ==============================================================================
+# SMC Standard Library: Finite State Machine Engine (std/fsm.smc)
+# ==============================================================================
+
+func validate_fsm(fsm_table) {
+    var state_names = keys(fsm_table)
+    var is_valid = true
+    for state in state_names {
+        var trans = fsm_table[state]
+        var event_names = keys(trans)
+        for ev in event_names {
+            var target_state = trans[ev]
+            if contains(state_names, target_state) == false {
+                is_valid = false
+            }
+        }
+    }
+    return is_valid
+}
+
+func simulate_fsm(initial_state, event_stream, fsm_table) {
+    return fsm_run(initial_state, event_stream, fsm_table)
+}
