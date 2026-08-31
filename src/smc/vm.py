@@ -1,14 +1,12 @@
-"""Dexter Virtual Machine (DexterVM) for the SMC Language.
+"""Dexter Virtual Machine (DexterVM) — Deterministic EXecution & Transient Ephemeral Runtime.
 
-Features:
-- Arithmetic expressions, logical comparisons, lists, and first-class dictionaries.
-- Standard built-in library: len(), push(), pop(), read_file(), write_file(), str(), int(), type().
-- For-in iteration loops and compound assignments (+=, -=, *=, /=).
-- Safe negative indexing, division-by-zero guards, and recursion limits.
-- Acme-Anvil Time-To-Live (TTL) ephemeral memory.
-- Captain Planet content-addressable function dispatch.
-- Sailor Moon transformations (MOON_PRISM_POWER) and watchdog fallbacks (TUXEDO_MASK).
-- Dee Dee mutation engine for fault-tolerance verification.
+Architecture & Features:
+- Deterministic execution engine with integer program counter and strict scoping.
+- Acme Ephemeral Memory: Automated Countdown & Memory Eviction via acme(ttl=k).
+- Multi-Phase State Machine: State-Linked Interleaved Phase (slip) register tracks (Phi in {0, 1, 2}).
+- First-class collections: Dynamic lists, nested hash maps, string interpolation, and standard library.
+- Resilient Event Routing: Named event dispatchers (register / dispatch) and watchdog fallback handlers.
+- Chaos Engineering: Seeded fault injection and AST mutation verification.
 """
 
 from __future__ import annotations

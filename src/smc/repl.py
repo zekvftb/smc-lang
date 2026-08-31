@@ -17,8 +17,8 @@ from smc.vm import DexterVM
 def start_repl() -> None:
     """Launch the interactive SMC REPL session."""
     print("=================================================================")
-    print("  DEXTER_VM v0.3.0 - Interactive Saturday Lab Shell")
-    print("  100% License-Free & Standalone Engine")
+    print("  DEXTER_VM v1.0.0 (Deterministic EXecution & Transient Runtime)")
+    print("  Interactive Language Shell & State Machine")
     print("  Commands: 'exit' to quit, 'clear' to reset, 'vars' to inspect")
     print("=================================================================\n")
 
@@ -28,7 +28,7 @@ def start_repl() -> None:
         try:
             line = input("smc> ").strip()
         except (KeyboardInterrupt, EOFError):
-            print("\n[THATS_ALL_FOLKS] Exiting interactive lab session.")
+            print("\n[DEXTER_VM] Exiting interactive shell.")
             break
 
         if not line:
@@ -36,12 +36,12 @@ def start_repl() -> None:
 
         cmd = line.lower()
         if cmd in ("exit", "quit", "halt", "thats_all_folks"):
-            print("[THATS_ALL_FOLKS] Exiting interactive lab session. Goodbye!")
+            print("[DEXTER_VM] Exiting interactive shell. Goodbye!")
             break
 
         if cmd == "clear":
             vm = DexterVM()
-            print("[DEXTER_VM] Laboratory environment cleared. Fresh state initialized.")
+            print("[DEXTER_VM] Environment cleared. Fresh state initialized.")
             continue
 
         if cmd == "vars":
