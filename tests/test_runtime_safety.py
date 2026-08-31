@@ -167,6 +167,26 @@ def test_algorithm_prime_sieve_of_eratosthenes():
     assert res["final_variables"]["found_primes"] == expected_primes
 
 
+def test_auto_grow_list_index_mode():
+    """Verify that auto_grow=True allows list growth on out-of-bounds index assignment."""
+    src = """
+    experiment 'autogrow_idx' {
+        let arr = [10, 20]
+        arr[5] = 99
+    }
+    """
+    tokens = SmcLexer(src).tokenize()
+    ast = SmcParser(tokens).parse()
+    vm = DexterVM(auto_grow=True)
+    res = vm.run(ast)
+    assert res["final_variables"]["arr"] == [10, 20, 0, 0, 0, 99]
+
+    chunk = BytecodeCompiler().compile(ast)
+    b_vm = BytecodeVM(auto_grow=True)
+    b_res = b_vm.run(chunk)
+    assert b_res["final_variables"]["arr"] == [10, 20, 0, 0, 0, 99]
+
+
 # ---------------------------------------------------------------------------
 # 3. DSL Feature Encapsulation & Phase Register Invariants
 # ---------------------------------------------------------------------------
@@ -200,3 +220,25 @@ def test_acme_ephemeral_ttl_decay():
     """
     res = run_smc_ast(smc_code, strict_mode=False)
     assert res["final_variables"]["v1"] == 999
+
+
+# ---------------------------------------------------------------------------
+# 4. Property-Based Arithmetic Invariant Tests (Hypothesis)
+# ---------------------------------------------------------------------------
+
+from hypothesis import given, settings, strategies as st
+
+@given(st.integers(min_value=-1000, max_value=1000), st.integers(min_value=-1000, max_value=1000))
+@settings(max_examples=40)
+def test_property_smc_addition_and_subtraction(a: int, b: int):
+    """Property test: SMC binary + and - match exact Python integer arithmetic."""
+    smc_code = f"""
+    experiment 'math_prop' {{
+        let add_res = {a} + {b}
+        let sub_res = {a} - {b}
+    }}
+    """
+    res = run_smc_ast(smc_code, strict_mode=True)
+    assert res["final_variables"]["add_res"] == a + b
+    assert res["final_variables"]["sub_res"] == a - b
+

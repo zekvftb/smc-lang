@@ -14,14 +14,15 @@ from smc.vm import DexterVM
 class BytecodeVM:
     """Fast flat stack-based virtual machine for compiled SMC bytecode."""
 
-    def __init__(self, strict_mode: bool = False) -> None:
+    def __init__(self, strict_mode: bool = False, auto_grow: bool = False) -> None:
         self.strict_mode: bool = strict_mode
+        self.auto_grow: bool = auto_grow
         self.stack: list[Any] = []
         self.globals: dict[str, Any] = {}
         self.call_stack: list[dict[str, Any]] = []
         self.stdout: list[str] = []
         self.instructions_executed: int = 0
-        self.dexter_helper = DexterVM(strict_mode=strict_mode)  # For built-in standard library delegation
+        self.dexter_helper = DexterVM(strict_mode=strict_mode, auto_grow=auto_grow)  # For built-in standard library delegation
 
     def run(self, chunk: BytecodeChunk) -> dict[str, Any]:
         self._execute_instructions(chunk.instructions, chunk)
@@ -203,9 +204,15 @@ class BytecodeVM:
                 elif isinstance(target, list):
                     try:
                         int_idx = int(idx)
-                        if (int_idx < -len(target) or int_idx >= len(target)) and self.strict_mode:
+                        if int_idx >= len(target):
+                            if self.auto_grow:
+                                target.extend([0] * (int_idx - len(target) + 1))
+                            elif self.strict_mode:
+                                raise IndexError(f"List assignment index {int_idx} out of range (length {len(target)})")
+                        elif int_idx < -len(target) and self.strict_mode:
                             raise IndexError(f"List assignment index {int_idx} out of range (length {len(target)})")
-                        target[int_idx] = val
+                        if 0 <= int_idx < len(target) or -len(target) <= int_idx < 0:
+                            target[int_idx] = val
                     except (IndexError, ValueError) as e:
                         if self.strict_mode and isinstance(e, IndexError):
                             raise

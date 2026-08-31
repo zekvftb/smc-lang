@@ -74,8 +74,9 @@ class TtlItem:
 class DexterVM:
     """The Dexter Laboratory Virtual Machine execution engine."""
 
-    def __init__(self, seed: int = 42, strict_mode: bool = False) -> None:
+    def __init__(self, seed: int = 42, strict_mode: bool = False, auto_grow: bool = False) -> None:
         self.strict_mode: bool = strict_mode
+        self.auto_grow: bool = auto_grow
         self.variables: dict[str, Any] = {}
         self.ttl_memory: dict[str, TtlItem] = {}
         self.planeteer_rings: dict[str, list[AstNode]] = {}
@@ -829,24 +830,31 @@ class DexterVM:
             elif isinstance(target, list):
                 try:
                     int_idx = int(idx)
-                    if (int_idx < -len(target) or int_idx >= len(target)) and self.strict_mode:
-                        raise IndexError(f"List assignment index {int_idx} out of range (length {len(target)})")
-                    curr = target[int_idx]
-                    if node.op == "=":
-                        target[int_idx] = new_val
-                    elif node.op == "+=":
-                        target[int_idx] = curr + new_val
-                    elif node.op == "-=":
-                        target[int_idx] = curr - new_val
-                    elif node.op == "*=":
-                        target[int_idx] = curr * new_val
-                    elif node.op == "/=":
-                        if new_val == 0:
-                            if self.strict_mode:
-                                raise ZeroDivisionError("Division by zero in indexed assignment")
-                            target[int_idx] = 0
-                        else:
-                            target[int_idx] = curr / new_val
+                    if int_idx >= len(target):
+                        if self.auto_grow:
+                            target.extend([0] * (int_idx - len(target) + 1))
+                        elif self.strict_mode:
+                            raise IndexError(f"List assignment index {int_idx} out of range (length {len(target)})")
+                    elif int_idx < -len(target):
+                        if self.strict_mode:
+                            raise IndexError(f"List assignment index {int_idx} out of range (length {len(target)})")
+                    if 0 <= int_idx < len(target) or -len(target) <= int_idx < 0:
+                        curr = target[int_idx]
+                        if node.op == "=":
+                            target[int_idx] = new_val
+                        elif node.op == "+=":
+                            target[int_idx] = curr + new_val
+                        elif node.op == "-=":
+                            target[int_idx] = curr - new_val
+                        elif node.op == "*=":
+                            target[int_idx] = curr * new_val
+                        elif node.op == "/=":
+                            if new_val == 0:
+                                if self.strict_mode:
+                                    raise ZeroDivisionError("Division by zero in indexed assignment")
+                                target[int_idx] = 0
+                            else:
+                                target[int_idx] = curr / new_val
                 except (IndexError, ValueError) as e:
                     if self.strict_mode and isinstance(e, (IndexError, ZeroDivisionError)):
                         raise
