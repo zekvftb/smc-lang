@@ -1,21 +1,25 @@
 # 📺 SMC (Saturday Morning Cartoons) Programming Language
-**The Biologically-Inspired, Bytecode-Compiled State Machine Language**
+**The Biologically-Inspired, Bytecode-Compiled Multi-Phase Language & VM**
 
-[![Pytest Status](https://img.shields.io/badge/tests-64%20passed-brightgreen.svg)](tests/)
+[![Release](https://img.shields.io/badge/release-v1.0.0-blue.svg)](RELEASE_NOTES_v1.0.0.md)
+[![Tests: 91 Passed](https://img.shields.io/badge/tests-91%20passed-brightgreen.svg)](tests/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Playground%20Web-brightgreen.svg)](https://zekvftb.github.io/smc-lang/docs/playground/)
 [![Architecture](https://img.shields.io/badge/engine-Linear%20Bytecode%20VM-blue.svg)](src/smc/bytecode_vm.py)
 [![Standard Library](https://img.shields.io/badge/stdlib-math%20%7C%20fsm%20%7C%20sequence-orange.svg)](std/)
 [![License: MIT/Fair-Source](https://img.shields.io/badge/License-Fair--Source%201.0-purple.svg)](LICENSE)
 
-**SMC (Saturday Morning Cartoons)** is a dual-profile programming language and fast linear bytecode virtual machine. It combines the multi-threaded information density and fault-tolerance of **biological genomes** with clean Go-inspired developer ergonomics and nostalgic Saturday morning pop culture!
+**SMC (Saturday Morning Cartoons)** is a dual-profile programming language and fast linear bytecode virtual machine. It combines the multi-threaded information density and fault-tolerance of **biological genomes** with clean developer ergonomics, ephemeral state machines (`acme`), reading phase shifts (`slip`), and nostalgic Saturday morning pop culture!
 
 ---
 
-## 🌐 Interactive Web Playground
-🎮 **[Try SMC Live in Your Browser](https://zekvftb.github.io/smc-lang/)** *(Zero install required — runs client-side on mobile & desktop)*
+## 🌐 Interactive Web Playground & Visual Debugger
+🎮 **[Launch SMC Multi-Phase Playground Live in Your Browser](https://zekvftb.github.io/smc-lang/docs/playground/)**  
+*(Zero install required — runs client-side interactive 3-track phase conveyor belt, memory stack inspector, and Acme TTL countdown timers)*
 
 ---
 
 ## 📖 Master Documentation & Guides
+* 👉 **[`RELEASE_NOTES_v1.0.0.md`](RELEASE_NOTES_v1.0.0.md)** *(Release Notes & Feature Overview for v1.0.0)*  
 * 👉 **[`docs/SMC_MADE_SIMPLE.md`](docs/SMC_MADE_SIMPLE.md)** *(The fun, plain-English "Made Simple" beginner tutorial!)*  
 * 👉 **[`SMC_MASTER_HANDBOOK.md`](SMC_MASTER_HANDBOOK.md)** *(The exhaustive guide with real-world production blueprints)*  
 * 👉 **[`docs/SPECIFICATION.md`](docs/SPECIFICATION.md)** *(The formal language specification and EBNF grammar)*  
@@ -23,21 +27,28 @@
 
 ---
 
-## ⚡ Key Architectural Features (v0.8.0)
+## ⚡ Key Architectural Features (v1.0.0)
 
 ### 1. 🚀 Linear Bytecode Compiler & Stack VM (Fast Default Engine)
-SMC compiles AST trees into flat arrays of linear bytecode instructions (`LOAD_CONST`, `STORE_VAR`, `BINARY_OP`, `JUMP`, `CALL_BUILTIN`, `HALT`), executing on a high-throughput stack virtual machine with an integer program counter (`pc`).
+SMC compiles AST trees into flat arrays of linear bytecode instructions (`LOAD_CONST`, `STORE_VAR`, `BINARY_OP`, `JUMP`, `CALL_BUILTIN`, `HALT`), executing on a high-throughput stack virtual machine with sub-millisecond execution speeds ($>5,000\text{ ops/ms}$).
 ```powershell
 smc run script.smc
 ```
 
-### 2. 🛡️ Strict Mode (`--strict`)
+### 2. 🐞 Interactive Step Debugger (`smc debug`)
+Step through SMC scripts interactively with breakpoints, variable watchlists, and live phase register diagrams:
+```powershell
+smc debug script.smc
+```
+
+### 3. 🧬 Genetic Programming (GP) Engine (`smc.evolution`)
+Evolve AST programs deterministically toward objective fitness functions using native `mutate`, `slip`, and `attenuator` primitives.
+
+### 4. 🛡️ Strict Mode (`--strict`)
 Disable fuzzy Levenshtein repairs for zero-tolerance production software development:
 ```powershell
 smc run --strict script.smc
 ```
-
-### 3. 🔍 Linear Bytecode Disassembler (`smc dis`)
 Inspect compiled bytecode instructions, memory offsets, and operands:
 ```powershell
 smc dis examples/rover_state_machine.smc

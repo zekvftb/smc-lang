@@ -5,7 +5,7 @@ featuring degenerate opcodes, CatDog multi-framing, Acme-TTL ephemeral memory,
 and Captain Planet content-addressable dispatch.
 """
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 
 from smc.tokens import Opcode, CanonicalToken, TokenType
 from smc.lexer import SmcLexer

@@ -379,9 +379,11 @@ def main() -> None:
         return
 
     parser = argparse.ArgumentParser(
+        prog="smc",
         description="SMC (Saturday Morning Cartoons) Language CLI",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    parser.add_argument("-V", "--version", action="version", version="smc 1.0.0")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # repl command
