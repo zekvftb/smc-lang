@@ -44,7 +44,7 @@ def run_file(file_path: Path | str, strict: bool = False, use_ast: bool = False)
 
     if use_ast:
         # Legacy AST Tree-Walker mode
-        vm = DexterVM()
+        vm = DexterVM(strict_mode=strict)
         vm.current_file = path.resolve()
         res = vm.run(ast)
 
@@ -60,7 +60,7 @@ def run_file(file_path: Path | str, strict: bool = False, use_ast: bool = False)
         # Default: High-Speed Linear Bytecode Stack VM
         compiler = BytecodeCompiler()
         chunk = compiler.compile(ast)
-        b_vm = BytecodeVM()
+        b_vm = BytecodeVM(strict_mode=strict)
         res = b_vm.run(chunk)
 
         print("\n--- SMC (BYTECODE VM) OUTPUT ---")

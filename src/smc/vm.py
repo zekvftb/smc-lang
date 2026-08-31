@@ -74,7 +74,8 @@ class TtlItem:
 class DexterVM:
     """The Dexter Laboratory Virtual Machine execution engine."""
 
-    def __init__(self, seed: int = 42) -> None:
+    def __init__(self, seed: int = 42, strict_mode: bool = False) -> None:
+        self.strict_mode: bool = strict_mode
         self.variables: dict[str, Any] = {}
         self.ttl_memory: dict[str, TtlItem] = {}
         self.planeteer_rings: dict[str, list[AstNode]] = {}
@@ -125,6 +126,9 @@ class DexterVM:
             return self.ttl_memory[name].value
         if name in self.variables:
             return self.variables[name]
+        if self.strict_mode:
+            raise NameError(f"Undefined identifier '{name}' in DexterVM runtime")
+        self.stdout.append(f"[WARNING] Unbound identifier '{name}' defaulted to 0.")
         return 0
 
     def set_var(self, name: str, value: Any) -> None:
@@ -702,11 +706,18 @@ class DexterVM:
                 return left * right
             if op == "/":
                 if right == 0:
+                    if self.strict_mode:
+                        raise ZeroDivisionError("Division by zero in SMC runtime")
                     self.stdout.append("[WARNING] Division by zero detected; clamped to 0.")
                     return 0
                 return left / right
             if op == "%":
-                return left % right if right != 0 else 0
+                if right == 0:
+                    if self.strict_mode:
+                        raise ZeroDivisionError("Modulo by zero in SMC runtime")
+                    self.stdout.append("[WARNING] Modulo by zero detected; clamped to 0.")
+                    return 0
+                return left % right
 
             # Comparisons
             if op == "==":
@@ -818,6 +829,8 @@ class DexterVM:
             elif isinstance(target, list):
                 try:
                     int_idx = int(idx)
+                    if (int_idx < -len(target) or int_idx >= len(target)) and self.strict_mode:
+                        raise IndexError(f"List assignment index {int_idx} out of range (length {len(target)})")
                     curr = target[int_idx]
                     if node.op == "=":
                         target[int_idx] = new_val
@@ -828,8 +841,15 @@ class DexterVM:
                     elif node.op == "*=":
                         target[int_idx] = curr * new_val
                     elif node.op == "/=":
-                        target[int_idx] = curr / new_val if new_val != 0 else 0
-                except (IndexError, ValueError):
+                        if new_val == 0:
+                            if self.strict_mode:
+                                raise ZeroDivisionError("Division by zero in indexed assignment")
+                            target[int_idx] = 0
+                        else:
+                            target[int_idx] = curr / new_val
+                except (IndexError, ValueError) as e:
+                    if self.strict_mode and isinstance(e, (IndexError, ZeroDivisionError)):
+                        raise
                     pass
 
         # 3. TTL_BOX: acme(ttl=N) x = <expr>

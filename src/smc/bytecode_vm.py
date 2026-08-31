@@ -14,13 +14,14 @@ from smc.vm import DexterVM
 class BytecodeVM:
     """Fast flat stack-based virtual machine for compiled SMC bytecode."""
 
-    def __init__(self) -> None:
+    def __init__(self, strict_mode: bool = False) -> None:
+        self.strict_mode: bool = strict_mode
         self.stack: list[Any] = []
         self.globals: dict[str, Any] = {}
         self.call_stack: list[dict[str, Any]] = []
         self.stdout: list[str] = []
         self.instructions_executed: int = 0
-        self.dexter_helper = DexterVM()  # For built-in standard library delegation
+        self.dexter_helper = DexterVM(strict_mode=strict_mode)  # For built-in standard library delegation
 
     def run(self, chunk: BytecodeChunk) -> dict[str, Any]:
         self._execute_instructions(chunk.instructions, chunk)
@@ -55,10 +56,16 @@ class BytecodeVM:
             elif op == BytecodeOp.LOAD_VAR:
                 # Check local stack frame first, then globals
                 val = 0
+                found = False
                 if call_stack and operand in call_stack[-1]:
                     val = call_stack[-1][operand]
+                    found = True
                 elif operand in globals_dict:
                     val = globals_dict[operand]
+                    found = True
+                
+                if not found and self.strict_mode:
+                    raise NameError(f"Undefined identifier '{operand}' in BytecodeVM runtime")
                 stack_append(val)
 
             elif op == BytecodeOp.STORE_VAR:
@@ -89,7 +96,12 @@ class BytecodeVM:
                 elif assign_op == "*=":
                     new_val = curr * rhs
                 elif assign_op == "/=":
-                    new_val = curr / rhs if rhs != 0 else 0
+                    if rhs == 0:
+                        if self.strict_mode:
+                            raise ZeroDivisionError("Division by zero in compound assignment")
+                        new_val = 0
+                    else:
+                        new_val = curr / rhs
                 else:
                     new_val = rhs
 
@@ -114,9 +126,19 @@ class BytecodeVM:
                 elif operand == "*":
                     stack_append(left * right)
                 elif operand == "/":
-                    stack_append(left / right if right != 0 else 0)
+                    if right == 0:
+                        if self.strict_mode:
+                            raise ZeroDivisionError("Division by zero in BytecodeVM runtime")
+                        stack_append(0)
+                    else:
+                        stack_append(left / right)
                 elif operand == "%":
-                    stack_append(left % right if right != 0 else 0)
+                    if right == 0:
+                        if self.strict_mode:
+                            raise ZeroDivisionError("Modulo by zero in BytecodeVM runtime")
+                        stack_append(0)
+                    else:
+                        stack_append(left % right)
                 elif operand == "==":
                     stack_append(left == right)
                 elif operand == "!=":
@@ -180,8 +202,13 @@ class BytecodeVM:
                     target[idx] = val
                 elif isinstance(target, list):
                     try:
-                        target[int(idx)] = val
-                    except (IndexError, ValueError):
+                        int_idx = int(idx)
+                        if (int_idx < -len(target) or int_idx >= len(target)) and self.strict_mode:
+                            raise IndexError(f"List assignment index {int_idx} out of range (length {len(target)})")
+                        target[int_idx] = val
+                    except (IndexError, ValueError) as e:
+                        if self.strict_mode and isinstance(e, IndexError):
+                            raise
                         pass
 
             elif op == BytecodeOp.JUMP:
