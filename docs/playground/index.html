@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SMC DexterVM - Interactive Multi-Phase Execution Playground</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <span class="badge">SMC 0.8.0</span>
+      <h1>🧬 DexterVM Multi-Phase Playground</h1>
+    </div>
+    <div class="subtitle">Interactive Visual Debugger & Reading Phase State Machine</div>
+  </header>
+
+  <main class="container">
+    <!-- Left Column: Code Editor & Controls -->
+    <section class="panel editor-panel">
+      <div class="panel-header">
+        <h2>📝 Program Editor</h2>
+        <div class="samples">
+          <label>Load Sample: </label>
+          <select id="sample-select">
+            <option value="dual_slip">Programmed Ribosomal Frameshift (slip)</option>
+            <option value="acme_ttl">Acme Anvil Ephemeral TTL Countdown</option>
+            <option value="bubble_sort">Standard Bubble Sort Algorithm</option>
+            <option value="genetic_sieve">Genetic Prime Sieve Algorithm</option>
+          </select>
+        </div>
+      </div>
+      <textarea id="code-editor" spellcheck="false"></textarea>
+      <div class="button-bar">
+        <button id="btn-run" class="btn btn-primary">▶ Run Multi-Phase Trace</button>
+        <button id="btn-step" class="btn btn-secondary" disabled>⏭ Step Forward</button>
+        <button id="btn-reset" class="btn btn-outline">🔄 Reset</button>
+      </div>
+    </section>
+
+    <!-- Right Column: Visualizer Panels -->
+    <section class="panel visualizer-panel">
+      <!-- 1. Reading Phase Conveyor Belt -->
+      <div class="viz-card">
+        <h3>🎯 Reading Phase Register (Phi = 0, 1, 2)</h3>
+        <div class="conveyor-belt">
+          <div id="track-0" class="phase-track active">
+            <span class="track-id">Track +0</span>
+            <span class="track-desc">Primary Reading Frame</span>
+          </div>
+          <div class="phase-arrow">⇄</div>
+          <div id="track-1" class="phase-track">
+            <span class="track-id">Track +1</span>
+            <span class="track-desc">+1 Slipped Frame</span>
+          </div>
+          <div class="phase-arrow">⇄</div>
+          <div id="track-2" class="phase-track">
+            <span class="track-id">Track +2</span>
+            <span class="track-desc">+2 Slipped Frame</span>
+          </div>
+        </div>
+        <div class="step-indicator" id="step-info">Step: 0 / 0 | Current Op: IDLE</div>
+      </div>
+
+      <!-- 2. Memory & Variable Watchlist -->
+      <div class="viz-card">
+        <h3>📦 Memory Stack & Variable Watchlist</h3>
+        <div id="variables-list" class="tag-cloud">
+          <span class="empty-hint">No active variables</span>
+        </div>
+      </div>
+
+      <!-- 3. Ephemeral Acme TTL Countdown Cards -->
+      <div class="viz-card">
+        <h3>⏳ Acme Anvil Ephemeral TTL Counters</h3>
+        <div id="ttl-container" class="ttl-grid">
+          <span class="empty-hint">No active ephemeral TTL boxes</span>
+        </div>
+      </div>
+
+      <!-- 4. Execution Output Log -->
+      <div class="viz-card">
+        <h3>📋 Console Output Log</h3>
+        <pre id="console-output" class="console-box">[SYSTEM READY] Enter an SMC experiment or load a sample above.</pre>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

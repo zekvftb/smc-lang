@@ -276,6 +276,8 @@ def init_project(project_name: str, base_path: Path | None = None) -> Path:
 
 
 def debug_file(file_path: Path | str) -> None:
+    from smc.visualizer import MultiPhaseVisualizer
+
     path = Path(file_path)
     if not path.is_file():
         print(f"Error: File not found at '{path}'")
@@ -290,20 +292,32 @@ def debug_file(file_path: Path | str) -> None:
 
     print("\n==================================================================")
     print(f"🐞 SMC Interactive Step Debugger: {path.name}")
-    print("Commands: (s)tep | (v)ars | (c)ontinue | eval <expr> | (q)uit")
+    print("Commands: (s)tep | (p)hase | (v)ars | (w)atch <var> | (b)reak <idx> | (c)ont | eval <e> | (q)uit")
     print("==================================================================\n")
 
-    statements = ast.body
+    statements = ast.statements
     total_stmts = len(statements)
     idx = 0
     continuous = False
+    breakpoints: set[int] = set()
+    watchlist: set[str] = set()
 
     while idx < total_stmts:
         stmt = statements[idx]
         node_name = stmt.__class__.__name__
+        step_num = idx + 1
+
+        if continuous and step_num in breakpoints:
+            continuous = False
+            print(f"\n[DEBUGGER] Hit breakpoint at step {step_num} ({node_name})")
 
         if not continuous:
-            prompt = f"[{idx+1}/{total_stmts}] {node_name} > "
+            # Display watched variables if any
+            if watchlist:
+                watched_vals = {k: vm.variables.get(k, "<undefined>") for k in watchlist}
+                print(f"  [WATCH] {watched_vals}")
+
+            prompt = f"[{step_num}/{total_stmts}] Phase +{vm.current_phase_offset} | {node_name} > "
             try:
                 cmd = input(prompt).strip()
             except (EOFError, KeyboardInterrupt):
@@ -315,6 +329,22 @@ def debug_file(file_path: Path | str) -> None:
                 break
             elif cmd in ("v", "vars"):
                 print(f"  Active Variables: {vm.variables}")
+                continue
+            elif cmd in ("p", "phase"):
+                print(f"  Phase Diagram: {MultiPhaseVisualizer.render_phase_diagram(vm.current_phase_offset)}")
+                continue
+            elif cmd.startswith("w ") or cmd.startswith("watch "):
+                var_to_watch = cmd.split(None, 1)[1].strip()
+                watchlist.add(var_to_watch)
+                print(f"  [WATCHLIST] Now watching '{var_to_watch}'")
+                continue
+            elif cmd.startswith("b ") or cmd.startswith("break "):
+                try:
+                    bp_val = int(cmd.split(None, 1)[1].strip())
+                    breakpoints.add(bp_val)
+                    print(f"  [BREAKPOINT] Added breakpoint at step {bp_val}")
+                except ValueError:
+                    print("  [ERROR] Invalid step number for breakpoint.")
                 continue
             elif cmd.startswith("eval "):
                 expr_src = cmd[5:].strip()
