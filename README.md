@@ -2,7 +2,7 @@
 **The Biologically-Inspired, Bytecode-Compiled Multi-Phase Language & VM**
 
 [![Release](https://img.shields.io/badge/release-v1.0.0-blue.svg)](RELEASE_NOTES_v1.0.0.md)
-[![Tests: 91 Passed](https://img.shields.io/badge/tests-91%20passed-brightgreen.svg)](tests/)
+[![Tests: 96 Passed](https://img.shields.io/badge/tests-96%20passed-brightgreen.svg)](tests/)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Playground%20Web-brightgreen.svg)](https://zekvftb.github.io/smc-lang/docs/playground/)
 [![Architecture](https://img.shields.io/badge/engine-Linear%20Bytecode%20VM-blue.svg)](src/smc/bytecode_vm.py)
 [![Standard Library](https://img.shields.io/badge/stdlib-math%20%7C%20fsm%20%7C%20sequence-orange.svg)](std/)

@@ -14,9 +14,10 @@ from smc.vm import DexterVM
 class BytecodeVM:
     """Fast flat stack-based virtual machine for compiled SMC bytecode."""
 
-    def __init__(self, strict_mode: bool = False, auto_grow: bool = False) -> None:
+    def __init__(self, strict_mode: bool = False, auto_grow: bool = False, max_instructions: int = 100_000) -> None:
         self.strict_mode: bool = strict_mode
         self.auto_grow: bool = auto_grow
+        self.max_instructions: int = max_instructions
         self.stack: list[Any] = []
         self.globals: dict[str, Any] = {}
         self.call_stack: list[dict[str, Any]] = []
@@ -40,11 +41,14 @@ class BytecodeVM:
         stack_pop = stack.pop
         globals_dict = self.globals
         call_stack = self.call_stack
+        max_inst = self.max_instructions
 
         if len(call_stack) > 500:
             raise RecursionError("[STACK OVERFLOW] Maximum call stack depth of 500 exceeded in BytecodeVM")
 
         while pc < code_len:
+            if self.instructions_executed > max_inst:
+                raise RuntimeError(f"[EXECUTION LIMIT] Maximum instruction execution limit of {max_inst} exceeded in BytecodeVM")
             inst = code[pc]
             op = inst.op
             operand = inst.operand
